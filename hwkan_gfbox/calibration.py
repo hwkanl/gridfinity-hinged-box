@@ -309,7 +309,11 @@ def open_preset(name, source, base):
         return preset, path, True
     if source:
         raise ParamError(f"preset '{name}' exists already: --from only makes a new one")
-    return preset, presets.resolve(name, base), False
+    path = presets.resolve(name, base)
+    if presets.is_shipped(path):
+        raise ParamError(f"'{name}' ships with the addon and is read-only: calibrate a new preset made from it "
+                         f"(--from {name})")
+    return preset, path, False
 
 
 def write_pending(preset, path, out_dir, builder=None):

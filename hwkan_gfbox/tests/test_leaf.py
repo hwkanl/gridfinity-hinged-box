@@ -13,7 +13,7 @@ from hwkan_gfbox.tests.test_hinge import _sheet, hinge_centers
 
 
 def test_leaf_derived_defaults():
-    s = _sheet()
+    s = _sheet(("hinge_clearance", "0.15"), ("dovetail_clearance", "0.09"))  # the values these were worked out for
     for name, want, tol in (("leaf_w", 9.7, 1e-9), ("leaf_tan", 2.474874, 1e-6),
                             ("leaf_foot", 3.425252, 1e-6), ("dovetail_start", 6.875, 1e-9),
                             ("leaf_len", 16.875, 1e-9), ("leaf_top_angle", 75.077600, 1e-5),

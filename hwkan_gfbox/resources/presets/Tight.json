@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "note": "shipped: tighter fits than default (hinge, dovetails, latch) for a well-tuned printer",
+  "values": {
+    "feet_xy_clearance": 0.25,
+    "feet_z_clearance": 0.5,
+    "lip_clearance": 0.2,
+    "hinge_clearance": 0.15,
+    "dovetail_clearance": 0.075,
+    "nub_clearance": 0.15,
+    "latch_clearance": 0.2,
+    "lock_dovetail_clearance": 0.075,
+    "lock_seat_clearance": 0.25,
+    "hook_preload": 0.2,
+    "lock_detent": 0.4,
+    "hinge_detent": 0.6
+  },
+  "calibration": {}
+}

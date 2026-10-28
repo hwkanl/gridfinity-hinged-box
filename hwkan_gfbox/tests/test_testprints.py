@@ -245,7 +245,7 @@ def test_gui_inputs_leave_the_document_open():
     finally:
         App.closeDocument(doc.Name)
     overrides, current = testprints.gui_inputs()
-    assert overrides == [] and near(current["hinge_clearance"], 0.15)
+    assert overrides == [] and near(current["hinge_clearance"], 0.2)
 
 
 def test_every_digit_can_be_labelled():

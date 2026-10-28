@@ -6,8 +6,10 @@ directory (spec: docs/superpowers/specs/2026-10-12-presets-design.md).
      "calibration": ...}
 
 A preset's name is its file name without .json. The built-in preset
-"default" is the defaults in params.py and has no file. Wherever a name is
-accepted, a path works too (see is_path).
+"default" is the defaults in params.py and has no file. Shipped presets
+(SHIPPED_DIR, in the addon) are read-only and found after the user's: a
+user preset of the same name wins. Wherever a name is accepted, a path
+works too (see is_path).
 """
 import json
 import math
@@ -24,6 +26,7 @@ DEFAULT = DEFAULT_PRESET
 FORMAT = 1
 NAMES = [name for name, _, tier, _ in PARAMS if tier in PRESET_TIERS]
 _KEYS = ("format", "note", "values", "calibration")
+SHIPPED_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "presets")
 
 
 class PresetNotFound(ParamError):
@@ -55,7 +58,7 @@ def is_path(ref):
 
 
 def preset_path(name, base=None):
-    """Where the preset NAME's file is (whether or not it exists)."""
+    """Where the user's preset NAME's file is (whether or not it exists)."""
     if name == DEFAULT:
         raise ParamError("'default' is the built-in preset (the values in params.py); it has no file")
     if is_path(name):
@@ -81,11 +84,26 @@ def resolve(ref, base=None):
     _check_dir(directory)
     if ref == DEFAULT:
         return None
-    path = os.path.join(directory, ref + ".json")
-    if not os.path.isfile(path):
-        known = ", ".join(name for name, _ in list_presets(base))
-        raise PresetNotFound(f"no preset '{ref}' in {directory} (presets: {known})")
-    return path
+    for path in (os.path.join(directory, ref + ".json"), os.path.join(SHIPPED_DIR, ref + ".json")):
+        if os.path.isfile(path):
+            return path
+    known = ", ".join(name for name, _ in list_presets(base))
+    raise PresetNotFound(f"no preset '{ref}' in {directory} (presets: {known})")
+
+
+def is_shipped(path):
+    """True if path is a shipped preset's file."""
+    return path is not None and os.path.dirname(os.path.abspath(path)) == os.path.abspath(SHIPPED_DIR)
+
+
+def read_only(ref, base=None):
+    """True for the built-in default and a shipped preset (not shadowed by a
+    user preset); False for a user preset or a missing one."""
+    try:
+        path = resolve(ref, base)
+    except PresetNotFound:
+        return False
+    return path is None or is_shipped(path)
 
 
 def _number(path, key, val):
@@ -151,19 +169,23 @@ def overrides(preset):
 
 
 def list_presets(base=None):
-    """(name, note) for "default" and every preset in the preset directory."""
+    """(name, note) for "default" and every preset in the preset directory
+    and the shipped ones (a user preset hides a shipped one of its name)."""
     directory = preset_dir(base)
     _check_dir(directory)
+    files = {}
+    for folder in (SHIPPED_DIR, directory):  # the user's last: theirs win
+        if os.path.isdir(folder):
+            for fname in os.listdir(folder):
+                if fname.endswith(".json") and fname != DEFAULT + ".json":
+                    files[fname[:-len(".json")]] = os.path.join(folder, fname)
     found = [(DEFAULT, "built-in: the defaults in hwkan_gfbox/params.py")]
-    if os.path.isdir(directory):
-        for fname in sorted(os.listdir(directory)):
-            if not fname.endswith(".json"):
-                continue
-            try:
-                note = load(os.path.join(directory, fname)).note
-            except ParamError as e:
-                note = f"(unreadable: {e})"
-            found.append((fname[:-len(".json")], note))
+    for name in sorted(files):
+        try:
+            note = load(files[name]).note
+        except ParamError as e:
+            note = f"(unreadable: {e})"
+        found.append((name, note))
     return found
 
 

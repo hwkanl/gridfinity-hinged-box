@@ -109,14 +109,14 @@ command in `hwkan_gfbox/tests/test_readme.py`).
 | `feet_xy_clearance` | 0.25 mm | lid feet shrunk by this per side vs a standard bin base |
 | `feet_z_clearance` | 0.5 mm | lid feet raised by this above a seated bin base; the lid never presses on the bins |
 | `lip_clearance` | 0.2 mm | gap between the rim's round bead (bottom) and its channel (lid), normal to the arc |
-| `hinge_clearance` | 0.15 mm | print-in-place gap between the free leaf and the lid knuckles, pins and lid face |
-| `dovetail_clearance` | 0.09 mm | gap between the leaf's dovetail sides and its slot's, normal to the sides (the slot's floor stays nominal) |
+| `hinge_clearance` | 0.2 mm | print-in-place gap between the free leaf and the lid knuckles, pins and lid face |
+| `dovetail_clearance` | 0.1 mm | gap between the leaf's dovetail sides and its slot's, normal to the sides (the slot's floor stays nominal) |
 | `nub_clearance` | 0.15 mm | gap between the seated leaf's notch edge and the hinge nub's flat underside: how far the snapped leaf can lift |
-| `latch_clearance` | 0.2 mm | print-in-place gap between the latch's base, lever and hook, and around their axles |
+| `latch_clearance` | 0.25 mm | print-in-place gap between the latch's base, lever and hook, and around their axles |
 | `lock_dovetail_clearance` | 0.1 mm | gap between the latch base's dovetail and the pad's slot (sides, normal to the face, and the slot's roof) |
 | `lock_seat_clearance` | 0.25 mm | gap around the hook bar in the lip's seat: the seat's curve is this much wider than the bar's round underside |
 | `hook_preload` | 0.2 mm | the hook is this much shorter than at zero pressure: the latch's pull on the lid |
-| `lock_detent` | 0.35 mm | the nub below the seated latch base stands this far into its dovetail's full-depth part: the snap the base clicks over (0 = no snap, the nub just touches) |
+| `lock_detent` | 0.4 mm | the nub below the seated latch base stands this far into its dovetail's full-depth part: the snap the base clicks over (0 = no snap, the nub just touches) |
 | `hinge_detent` | 0.6 mm | the nub above each hinge slot stands this far out of the slot's wide face into the leaf's notch: the snap the leaf's dovetail flexes over on the way in (0 = no snap) |
 
 The inputs say what box you get; the tolerances and fits depend on your
@@ -134,6 +134,10 @@ per printer and material:
 
 Values it leaves out are the defaults. Presets live in FreeCAD's user data
 directory (`hwkan_gfbox/presets/NAME.json` under it); `default` is built in.
+The addon also ships `Tight` (tighter hinge, dovetail and latch fits, for a
+well-tuned printer; `hwkan_gfbox/resources/presets/`). Shipped presets are
+read-only and update with the addon; a preset of yours with the same name
+is used instead.
 
     scripts/fc.sh scripts/presets.py list                    # the presets you have
     scripts/fc.sh scripts/presets.py new prusa-petg          # a copy of default to edit

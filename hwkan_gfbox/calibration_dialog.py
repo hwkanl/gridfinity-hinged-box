@@ -29,7 +29,7 @@ def run_dialog():
     all_names = [n for n, _ in presets.list_presets()]
     name = QtWidgets.QComboBox()
     name.setEditable(True)
-    name.addItems([n for n in all_names if n != presets.DEFAULT])
+    name.addItems([n for n in all_names if not presets.read_only(n)])
     source = QtWidgets.QComboBox()
     source.addItems(all_names)
     tests = QtWidgets.QLineEdit(cal.DEFAULT_TESTS)

@@ -42,7 +42,7 @@ def _error(fn, *args, **kw):
 
 def test_names_are_the_twelve_preset_values():
     assert len(presets.NAMES) == 12 and "bin_clearance" not in presets.NAMES and "gf_x" not in presets.NAMES
-    assert presets.defaults()["dovetail_clearance"] == 0.09 and presets.defaults()["hinge_detent"] == 0.6
+    assert presets.defaults()["dovetail_clearance"] == 0.1 and presets.defaults()["hinge_detent"] == 0.6
 
 
 def test_default_needs_no_file():
@@ -138,7 +138,7 @@ def test_paths_are_read_as_files_and_kept_absolute():
 def test_overrides_are_mm_pairs_in_params_order():
     pairs = presets.overrides(presets.load("default"))
     assert [n for n, _ in pairs] == presets.NAMES
-    assert dict(pairs)["dovetail_clearance"] == "0.09 mm" and dict(pairs)["lock_detent"] == "0.35 mm"
+    assert dict(pairs)["dovetail_clearance"] == "0.1 mm" and dict(pairs)["lock_detent"] == "0.4 mm"
 
 
 def test_new_list_and_path():
@@ -167,6 +167,25 @@ def test_list_tolerates_an_unreadable_file():
         _in_dir(b, "broken", "{")
         note = dict(presets.list_presets(b))["broken"]
         assert note.startswith("(unreadable")
+
+
+def test_shipped_tight_is_found_after_the_users_and_read_only():
+    with _base() as b:
+        t = presets.load("Tight", b)
+        assert presets.is_shipped(presets.resolve("Tight", b)) and presets.read_only("Tight", b)
+        assert t.values["hinge_clearance"] == 0.15 and t.values["dovetail_clearance"] == 0.075
+        assert dict(presets.list_presets(b))["Tight"] == t.note and t.note.startswith("shipped")
+        assert presets.read_only("default", b) and not presets.read_only("nope", b)
+        # a user preset of the same name wins, and is the user's to change
+        _in_dir(b, "Tight", {"format": 1, "values": {"hinge_clearance": 0.12}})
+        assert presets.load("Tight", b).values["hinge_clearance"] == 0.12 and not presets.read_only("Tight", b)
+        assert [n for n, _ in presets.list_presets(b)].count("Tight") == 1
+
+
+def test_shipped_presets_are_valid_and_differ_from_default():
+    for fname in os.listdir(presets.SHIPPED_DIR):
+        p = presets.load(os.path.join(presets.SHIPPED_DIR, fname))
+        assert fname.endswith(".json") and fname != "default.json" and p.values != presets.defaults(), fname
 
 
 def test_main():

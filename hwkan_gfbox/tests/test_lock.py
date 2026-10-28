@@ -17,7 +17,7 @@ from hwkan_gfbox.verify import gap, latch_fit_checks
 
 
 def test_lock_derived_defaults():
-    s = _sheet()
+    s = _sheet(("latch_clearance", "0.2"), ("lock_detent", "0.35"))  # the values these were worked out for
     for name, want, tol in (
             ("latch_base_hw", 4.6, 1e-9), ("lever_in", 4.8, 1e-9), ("lever_out", 7.647521, 1e-6),
             ("hook_in", 7.847521, 1e-6), ("latch_w", 20.695042, 1e-6), ("pad_front", 2, 1e-9), ("lock_slot_w", 9.430940, 1e-6),

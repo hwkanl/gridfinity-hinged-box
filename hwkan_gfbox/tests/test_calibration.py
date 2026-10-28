@@ -79,7 +79,7 @@ def test_parse_tests():
 def test_start_sets_up_the_run():
     p = _preset()
     s = cal.start(p, "ABCDEF", ALL)
-    assert s == {"tests": "ABCDEF", "current": "A", "sweep": [5, 6, 7, 8, 9], "written": False, "chosen": {}}
+    assert s == {"tests": "ABCDEF", "current": "A", "sweep": [7, 8, 9, 10, 11], "written": False, "chosen": {}}
     assert p.calibration == s and cal.state(p) == s
 
 
@@ -130,8 +130,8 @@ def test_bad_answers_change_nothing():
     cal.start(p, "ABCDEF", ALL)
     p.calibration["written"] = True
     snapshot = (dict(p.values), dict(p.calibration))
-    for text, fragment in (("B4", "test A"), ("A3", "5 to 9"), ("tight", "stuck or sloppy"),
-                           ("hello", "stuck or sloppy"), ("A\u00b2", "A5"), ("A", "A5")):
+    for text, fragment in (("B4", "test A"), ("A3", "7 to 11"), ("tight", "stuck or sloppy"),
+                           ("hello", "stuck or sloppy"), ("A\u00b2", "A7"), ("A", "A7")):
         assert fragment in _error(cal.answer, p, text, ALL), text
         assert (dict(p.values), dict(p.calibration)) == snapshot, text
     p.calibration["written"] = False
@@ -146,7 +146,7 @@ def test_status_text():
     p = _preset()
     cal.start(p, "ABCDEF", ALL)
     text = cal.status_text(p, "/out")
-    for fragment in ("test A", "hinge_clearance", "A5 = 0.1 mm", "A9 = 0.2 mm", "/out/A_05-09.stl",
+    for fragment in ("test A", "hinge_clearance", "A7 = 0.15 mm", "A11 = 0.25 mm", "/out/A_07-11.stl",
                      "stuck", "sloppy", cal.TESTS["A"].check):
         assert fragment in text, (fragment, text)
     assert "no calibration run" in cal.status_text(_preset(), "/out")
@@ -250,9 +250,9 @@ def test_a_new_preset_starts_at_a():
     with _dirs() as (base, out):
         b = FakeBuilder()
         code, text, _ = _main(["petg"], base, out, b)
-        assert code == 0 and b.calls[0][:2] == ("A", [5, 6, 7, 8, 9])
+        assert code == 0 and b.calls[0][:2] == ("A", [7, 8, 9, 10, 11])
         s = _saved(base, "petg")["calibration"]
-        assert s["current"] == "A" and s["written"] is True and "A5 = 0.1 mm" in text
+        assert s["current"] == "A" and s["written"] is True and "A7 = 0.15 mm" in text
 
 
 def test_from_copies_values_and_only_for_a_new_preset():
@@ -271,7 +271,7 @@ def test_pick_shift_and_end():
         b = FakeBuilder()
         _main(["petg", "--tests", "AB"], base, out, b)
         assert _main(["petg", "stuck"], base, out, b)[0] == 0
-        assert b.calls[-1][:2] == ("A", [9, 10, 11, 12, 13])
+        assert b.calls[-1][:2] == ("A", [11, 12, 13, 14, 15])
         assert _main(["petg", "A12"], base, out, b)[0] == 0
         assert b.calls[-1][0] == "B" and b.calls[-1][2]["hinge_clearance"] == 0.275
         code, text, _ = _main(["petg", "B5"], base, out, b)
@@ -348,8 +348,8 @@ def test_end_to_end_with_real_builds():
     with _dirs() as (base, out):
         assert _main(["e2e"], base, out, None)[0] == 0
         d = os.path.join(out, "e2e")
-        assert sorted(os.listdir(d)) == ["A_05-09.stl", "A_05-09.txt"]
-        assert "A9 = 0.2 mm" in open(os.path.join(d, "A_05-09.txt")).read()
+        assert sorted(os.listdir(d)) == ["A_07-11.stl", "A_07-11.txt"]
+        assert "A9 = 0.2 mm" in open(os.path.join(d, "A_07-11.txt")).read()
         assert _main(["e2e", "A9"], base, out, None)[0] == 0
         assert {"B_03-07.stl", "B_03-07_hinge_rib.stl", "B_03-07.txt"} <= set(os.listdir(d))
         txt = open(os.path.join(d, "B_03-07.txt")).read()
@@ -365,6 +365,14 @@ def test_default_has_no_file_for_a_run_but_has_a_status():
             assert code == 2 and "built-in" in err and not b.calls, (extra, err)
         code, text, _ = _main(["default"], base, out, b)
         assert code == 0 and "no calibration run" in text
+
+
+def test_a_shipped_preset_is_not_calibrated_in_place():
+    with _dirs() as (base, out):
+        b = FakeBuilder()
+        code, _, err = _main(["Tight", "--tests", "A"], base, out, b)
+        assert code == 2 and "ships with the addon" in err and "--from Tight" in err and not b.calls, err
+        assert _main(["tight2", "--from", "Tight"], base, out, b)[0] == 0 and b.calls
 
 
 def test_from_needs_a_name():

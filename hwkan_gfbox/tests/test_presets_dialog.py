@@ -68,3 +68,14 @@ def test_delete_removes_the_file_but_not_the_default():
         _raises(lambda: pd.delete(presets.DEFAULT, base), "built-in default can't be deleted")
     finally:
         shutil.rmtree(base)
+
+
+def test_shipped_presets_cant_be_saved_or_deleted():
+    base = tempfile.mkdtemp()
+    try:
+        tight = presets.load("Tight", base)
+        _raises(lambda: pd.save_checked(pd.edited(tight, {"hinge_clearance": "0.12"}), base), "ships with the addon")
+        _raises(lambda: pd.delete("Tight", base), "ships with the addon")
+        assert presets.load("Tight", base).values["hinge_clearance"] == 0.15  # unchanged
+    finally:
+        shutil.rmtree(base)

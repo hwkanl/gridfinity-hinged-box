@@ -35,6 +35,8 @@ def save_checked(preset, base=None):
     path = presets.resolve(preset.ref, base)
     if path is None:
         raise ParamError("the built-in default can't be changed: make a new preset from it")
+    if presets.is_shipped(path):
+        raise ParamError(f"'{preset.name}' ships with the addon and can't be changed: make a new preset from it")
     problem = box_panel.check(box_panel.defaults(), preset)
     if problem:
         raise ParamError(problem)
@@ -45,6 +47,8 @@ def save_checked(preset, base=None):
 def delete(name, base=None):
     if name == presets.DEFAULT:
         raise ParamError("the built-in default can't be deleted")
+    if presets.read_only(name, base):
+        raise ParamError(f"'{name}' ships with the addon and can't be deleted")
     os.remove(presets.preset_path(name, base))
 
 
@@ -98,7 +102,7 @@ def run_dialog():
 
     def changed():
         p = current.get("preset")
-        if p is None or p.name == presets.DEFAULT:
+        if p is None or presets.read_only(p.ref):
             return False
         try:
             q = edited(p, texts(), note.text())
@@ -143,7 +147,7 @@ def run_dialog():
             delete_b.setEnabled(True)
             return error(e)
         current["preset"] = p
-        read_only = p.name == presets.DEFAULT
+        read_only = presets.read_only(p.ref)
         note.setText(p.note)
         note.setReadOnly(read_only)
         for i, key in enumerate(presets.NAMES):
@@ -156,7 +160,8 @@ def run_dialog():
             table.setItem(i, 1, desc)
         save_b.setEnabled(not read_only)
         delete_b.setEnabled(not read_only)
-        status.setText("built-in, read-only: New… makes an editable copy" if read_only else "")
+        kind = "built-in" if p.name == presets.DEFAULT else "shipped with the addon"
+        status.setText(f"{kind}, read-only: New… makes an editable copy" if read_only else "")
 
     def save():
         if "preset" not in current:
