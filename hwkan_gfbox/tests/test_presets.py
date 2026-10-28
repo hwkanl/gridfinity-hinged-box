@@ -40,8 +40,8 @@ def _error(fn, *args, **kw):
     raise AssertionError(f"accepted: {args} {kw}")
 
 
-def test_names_are_the_twelve_preset_values():
-    assert len(presets.NAMES) == 12 and "bin_clearance" not in presets.NAMES and "gf_x" not in presets.NAMES
+def test_names_are_the_thirteen_preset_values():
+    assert len(presets.NAMES) == 13 and "bin_clearance" not in presets.NAMES and "gf_x" not in presets.NAMES
     assert presets.defaults()["dovetail_clearance"] == 0.1 and presets.defaults()["hinge_detent"] == 0.6
 
 

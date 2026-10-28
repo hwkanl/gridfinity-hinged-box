@@ -85,8 +85,9 @@ def test_lid():
 
 def test_zero_turns_the_details_off():
     doc = built(*OFF)
-    for part in ("Bottom", "Lid", "LatchLever"):
-        assert get(doc, part).TypeId == "Part::Cut" and not doc.getObjectsByLabel(part + "Bare"), part
+    # Bottom and Lid: the bare part is the finished one (the stacking features follow)
+    for part, label in (("Bottom", "BottomFinished"), ("Lid", "LidFinished"), ("LatchLever", "LatchLever")):
+        assert get(doc, label).TypeId == "Part::Cut" and not doc.getObjectsByLabel(part + "Bare"), part
 
 
 def test_an_impossible_size_is_a_build_error():

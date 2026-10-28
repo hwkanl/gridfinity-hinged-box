@@ -2,7 +2,7 @@
 <package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
   <name>Gridfinity Hinged Box</name>
   <description>Parametric Gridfinity-compatible hinged storage box with print-in-place hinges and latches; builds the model and exports print-ready STLs, test prints and calibration sweeps.</description>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
   <date>2026-10-28</date>
   <maintainer email="hwkanlab@gmail.com">hwkan</maintainer>
   <license file="LICENSE">LGPL-2.1-or-later</license>

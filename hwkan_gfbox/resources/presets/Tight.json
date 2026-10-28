@@ -11,6 +11,7 @@
     "latch_clearance": 0.2,
     "lock_dovetail_clearance": 0.075,
     "lock_seat_clearance": 0.25,
+    "stack_clearance": 0.2,
     "hook_preload": 0.2,
     "lock_detent": 0.4,
     "hinge_detent": 0.6

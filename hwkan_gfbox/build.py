@@ -19,7 +19,7 @@ import FreeCAD as App
 
 from hwkan_gfbox import presets
 from hwkan_gfbox.cli import parse_overrides
-from hwkan_gfbox.parts import body, cosmetics, feet, halves, hinge, lock
+from hwkan_gfbox.parts import body, cosmetics, feet, halves, hinge, lock, stacking
 from hwkan_gfbox.shapes import BuildError, cut, fuse
 from hwkan_gfbox.sheet import (SHEET_NAME, ParamError, apply_overrides, create_params_sheet, preset_values,
                                set_preset, sheet_overrides, sheet_preset, sheet_source)
@@ -39,10 +39,12 @@ def _build_geometry(doc):
     bottom_body = fuse(doc, "BottomBody", [bottom_base, hinge.build_hinge_ribs(doc), hinge.build_hinge_nubs(doc),
                                            lock.build_lock_pads(doc)])
     slots = fuse(doc, "Slots", [hinge.build_slots(doc), lock.build_lock_slots(doc)])
-    cosmetics.finish_bottom(doc, cut(doc, "BottomBare", bottom_body, slots))
+    finished = cosmetics.finish_bottom(doc, cut(doc, "BottomBare", bottom_body, slots))
+    cut(doc, "Bottom", finished, stacking.build_grooves(doc))
     lid_body = fuse(doc, "LidBody", [lid_raw, halves.build_lid_rim(doc), feet.build_feet(doc),
                                      hinge.build_lid_knuckles(doc), lock.build_lock_lips(doc)])
-    cosmetics.finish_lid(doc, cut(doc, "LidBare", lid_body, halves.build_groove(doc)))
+    finished = cosmetics.finish_lid(doc, cut(doc, "LidBare", lid_body, halves.build_groove(doc)))
+    fuse(doc, "Lid", [finished, stacking.build_notches(doc)])
     hinge.build_leaves(doc)
     lock.build_latch_bases(doc)
     lock.build_latch_levers(doc)

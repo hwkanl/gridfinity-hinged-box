@@ -115,6 +115,7 @@ command in `hwkan_gfbox/tests/test_readme.py`).
 | `latch_clearance` | 0.25 mm | print-in-place gap between the latch's base, lever and hook, and around their axles |
 | `lock_dovetail_clearance` | 0.1 mm | gap between the latch base's dovetail and the pad's slot (sides, normal to the face, and the slot's roof) |
 | `lock_seat_clearance` | 0.25 mm | gap around the hook bar in the lip's seat: the seat's curve is this much wider than the bar's round underside |
+| `stack_clearance` | 0.2 mm | gap between a lid's stacking notches and the grooves under the box stacked on it, normal to their faces (and at their ends); at most about 0.28 at default sizes (the grooves stay in the wall) |
 | `hook_preload` | 0.2 mm | the hook is this much shorter than at zero pressure: the latch's pull on the lid |
 | `lock_detent` | 0.4 mm | the nub below the seated latch base stands this far into its dovetail's full-depth part: the snap the base clicks over (0 = no snap, the nub just touches) |
 | `hinge_detent` | 0.6 mm | the nub above each hinge slot stands this far out of the slot's wide face into the leaf's notch: the snap the leaf's dovetail flexes over on the way in (0 = no snap) |

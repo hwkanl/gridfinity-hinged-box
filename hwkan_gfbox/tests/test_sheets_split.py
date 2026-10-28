@@ -82,4 +82,4 @@ def test_bin_clearance_is_internal_and_presets_hold_tolerances_and_fits():
     assert sorted(n for n, t in TIERS.items() if t in PRESET_TIERS) == sorted([
         "feet_xy_clearance", "feet_z_clearance", "lip_clearance", "hinge_clearance", "dovetail_clearance",
         "nub_clearance", "latch_clearance", "lock_dovetail_clearance", "lock_seat_clearance",
-        "hook_preload", "lock_detent", "hinge_detent"])
+        "stack_clearance", "hook_preload", "lock_detent", "hinge_detent"])

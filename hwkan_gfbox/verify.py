@@ -39,11 +39,13 @@ SIZES = [
 # reaches 0.76 in from the back wall below the bin tops; the bins stand 0.25
 # inside their cells).
 # nub_clearance must stay below leaf_notch_h - hinge_nub_h (0.5).
+# stack_clearance at most about 0.28 at default dimensions (the grooves stay
+# in the wall: wall_t / 2 +- (stack_w / 2 + stack_clearance * sqrt(2))).
 # hook_preload and lock_detent are interferences, not gaps: low 0, high 0.5
 # (lock_detent's limit, lock_key_d).
 _LOW = {"hinge_clearance": "0.1", "latch_clearance": "0.1", "hook_preload": "0", "bin_clearance": "0.6"}
 _HIGH = {"hinge_clearance": "0.4", "dovetail_clearance": "0.25", "latch_clearance": "0.4", "hook_preload": "0.5",
-         "bin_clearance": "1.5", "nub_clearance": "0.4"}
+         "bin_clearance": "1.5", "nub_clearance": "0.4", "stack_clearance": "0.25"}
 TOLERANCE_SETS = [
     ("tol=default", []),
     ("tol=low", [(n, _LOW.get(n, "0")) for n in TOLERANCE_NAMES]),
@@ -91,7 +93,8 @@ def checks(doc):
     yield "Lid is one sound closed solid", _sound("lid", lid)
 
     # 2. Dimensions
-    for label, shape, z0, z1 in (("Bottom", bottom, 0, sz + lh - lc), ("Lid", lid, sz, bh)):
+    # The lid's top carries the stacking notches.
+    for label, shape, z0, z1 in (("Bottom", bottom, 0, sz + lh - lc), ("Lid", lid, sz, bh + v("stack_h"))):
         bb = shape.optimalBoundingBox()  # BoundBox is loose around the rim's curved faces
         # The lid's knuckles stand out of its back by hinge_axis_out + knuckle_r,
         # the bottom's hinge ribs by leaf_face_gap + dovetail_t.
@@ -304,6 +307,23 @@ def checks(doc):
         bin_hits += [f"{name} {angle}" for name, s in skins.items() if opened.common(s).Volume > EPS]
     yield f"the lid opens 0-90 deg clear of the outer bins (contact at: {bin_hits or 'none'} deg)", not bin_hits
 
+    # Stacking: the same box set on this one (its bottom on the lid top) shares
+    # no volume with it, latches and leaves included; its grooves clear the
+    # notches by stack_clearance and hold it: slid a little further than the
+    # groove's play, it hits them.
+    parts = [get(doc, label).Shape for label in ("Leaves", "LatchBases", "LatchLevers", "LatchHooks")]
+    below = Part.makeCompound([lid] + parts)
+    above = Part.makeCompound([bottom] + parts)
+    above.translate(App.Vector(0, 0, bh))
+    notches = get(doc, "Notches").Shape
+    clash = sum(a.common(b).Volume for a in above.Solids for b in below.Solids)
+    g = above.Solids[0].distToShape(notches)[0]
+    slid = above.Solids[0].copy()
+    slid.translate(App.Vector(2 * v("stack_side") + 0.1, 0, 0))
+    yield (f"stacked on the same box: nothing touches ({clash:.6f} mm3), grooves {g:.3f} mm off the notches, "
+           "and they hold it", clash <= EPS and abs(g - v("stack_clearance")) <= 1e-3
+           and slid.common(notches).Volume > EPS)
+
     yield from _leaf_checks(doc, v, near, bottom, lid, ya, za)
     yield from _lock_checks(doc, v, near, bottom, lid)
 
@@ -394,9 +414,10 @@ def gap(a, b):
 
 
 def before_cosmetics(doc, part):
-    """The part before its fillets and chamfers (the part itself if it has none)."""
-    found = doc.getObjectsByLabel(part + "Bare")
-    return found[0] if found else get(doc, part)
+    """The part before its fillets, chamfers and stacking features (with no
+    cosmetics, the bare part is relabelled <part>Finished)."""
+    found = doc.getObjectsByLabel(part + "Bare") or doc.getObjectsByLabel(part + "Finished")
+    return found[0]
 
 
 def latch_fit_checks(doc):

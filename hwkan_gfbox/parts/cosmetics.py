@@ -5,7 +5,8 @@ Part::Fillet / Part::Chamfer keep their edges as numbers and their sizes
 as plain values, so the edges are chosen here, by position, from the
 sheet's values at build time: after a Params change the model is rebuilt,
 not recomputed. Each chain starts at the part's bare object
-(<Part>Bare) and its last object takes the part's label.
+(<Part>Bare) and its last object is labelled <Part>Finished; the stacking
+features (parts/stacking.py) then make the part itself.
 """
 import Part
 
@@ -120,7 +121,7 @@ def finish_bottom(doc, bare):
     obj = apply(doc, "Fillet", "BottomRibFillet", obj, "rib_fillet",
                 any_of(vertical_at([(x, rib_y) for x in sides]), along_x_at([(rib_y, full)]),
                        slanted_at(sides, wall_y, foot)), 5 * n)
-    return _finish(obj, "Bottom")
+    return _finish(obj, "BottomFinished")
 
 
 def finish_lid(doc, bare):
@@ -137,4 +138,4 @@ def finish_lid(doc, bare):
     lip_y = -(v("rim_d") / 2 + v("lock_lip_e"))
     obj = apply(doc, "Chamfer", "LidLipChamfer", obj, "lip_chamfer",
                 along_x_at([(lip_y, v("split_z"))]), int(v("lock_count")))
-    return _finish(obj, "Lid")
+    return _finish(obj, "LidFinished")

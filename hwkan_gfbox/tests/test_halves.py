@@ -16,7 +16,7 @@ def test_half_heights():
     bb = get(doc, "Bottom").Shape.optimalBoundingBox()
     assert near(bb.ZMin, 0) and near(bb.ZMax, v(doc, "split_z") + v(doc, "lip_height") - v(doc, "lip_clearance")), bb
     bb = get(doc, "Lid").Shape.optimalBoundingBox()
-    assert near(bb.ZMin, v(doc, "split_z")) and near(bb.ZMax, v(doc, "box_h")), bb
+    assert near(bb.ZMin, v(doc, "split_z")) and near(bb.ZMax, v(doc, "box_h") + v(doc, "stack_h")), bb  # the notches
 
 
 def test_parting_line_footprint():

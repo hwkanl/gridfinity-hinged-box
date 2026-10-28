@@ -74,6 +74,21 @@ def validate(sheet):
     if 2 * v("pad_reach") >= min(v("outer_w"), v("outer_d")):
         errors.append("2 * pad_reach must be less than outer_w and outer_d "
                       f"(2 * {v('pad_reach'):g} >= {min(v('outer_w'), v('outer_d')):g} mm)")
+    if v("stack_h") <= 0 or v("stack_w") <= 2 * v("stack_h"):
+        errors.append("the stacking notches need stack_h > 0 and stack_w > 2 * stack_h (a flat top) "
+                      f"({v('stack_h'):g}, {v('stack_w'):g} mm)")
+    if v("groove_in") <= 0:
+        errors.append("the stacking grooves must stay in the wall: wall_t / 2 - stack_w / 2 - stack_clearance * sqrt(2) "
+                      f"must be > 0 ({v('groove_in'):g} mm); make stack_w smaller")
+    flat = v("wall_t") + v("rim_extra") - max(v("bottom_chamfer"), v("lid_chamfer"))
+    if v("groove_out") >= min(v("wall_t"), flat):
+        errors.append("the stacking grooves must stay in the wall and inside the bottom's and lid's chamfers: "
+                      f"wall_t / 2 + stack_w / 2 + stack_clearance * sqrt(2) = {v('groove_out'):g} mm must be less "
+                      f"than {min(v('wall_t'), flat):g} mm; make stack_w smaller")
+    if v("stack_reach") + v("stack_clearance") + v("bottom_chamfer") > v("pad_reach"):
+        errors.append("the stacking grooves must end inside the corner pads: stack_reach + stack_clearance + "
+                      f"bottom_chamfer ({v('stack_reach') + v('stack_clearance') + v('bottom_chamfer'):g} mm) must be "
+                      f"at most pad_reach ({v('pad_reach'):g} mm)")
     if v("knuckle_r") <= v("pin_dia") / 2:
         errors.append("knuckle_r must be greater than pin_dia / 2 "
                       f"({v('knuckle_r'):g} <= {v('pin_dia') / 2:g} mm)")

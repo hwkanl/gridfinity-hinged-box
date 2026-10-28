@@ -23,7 +23,7 @@ def test_print_shapes_sit_on_the_bed_centered():
     for part in ("bottom", "lid"):
         bb = print_shape(doc, part).optimalBoundingBox()
         assert near(bb.ZMin, 0) and near(bb.XMin + bb.XMax, 0) and near(bb.YMin + bb.YMax, 0), (part, bb)
-    assert near(print_shape(doc, "lid").optimalBoundingBox().ZMax, v(doc, "lid_h"))
+    assert near(print_shape(doc, "lid").optimalBoundingBox().ZMax, v(doc, "lid_h") + v(doc, "stack_h"))  # the notches
 
 
 def test_lid_prints_with_rim_and_every_foot_on_the_bed():
