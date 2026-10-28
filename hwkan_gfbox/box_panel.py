@@ -1,11 +1,11 @@
-"""The New box / Rebuild box task panel. Its logic (defaults, rebuild) is
+"""The New box task panel. Its logic (defaults, check, replace_box) is
 plain functions; Qt and FreeCADGui are imported inside the panel only."""
 import sys
 
 import FreeCAD as App
 
 from hwkan_gfbox import presets
-from hwkan_gfbox.build import DOC_NAME, box_document, build, params_document, sheet_settings, show
+from hwkan_gfbox.build import DOC_NAME, box_document, build, params_document, show
 from hwkan_gfbox.params import INPUT, PARAMS
 from hwkan_gfbox.shapes import BuildError
 from hwkan_gfbox.sheet import SHEET_NAME, ParamError
@@ -28,24 +28,10 @@ def overrides(inputs):
 CHECK_DOC = DOC_NAME + "_check"
 
 
-def initial(rebuild, base=None):
-    """(inputs {name: int}, preset, warnings) the panel starts with: the
-    defaults and the default preset; rebuild: the open box's inputs and the
-    preset its preset cell names (build.sheet_settings)."""
-    inputs = defaults()
-    if not rebuild:
-        return inputs, presets.load(presets.DEFAULT, base), []
-    box = box_document()
-    if box is None:
-        raise ParamError("no generated box is open")
-    sets, preset, warnings = sheet_settings(box.getObject(SHEET_NAME), base)
-    for name, val in sets:
-        try:
-            inputs[name] = int(float(val))
-        except ValueError:
-            raise ParamError(f"{name}: '{val}' is not a whole number; set it in the Params sheet "
-                             "or use New box") from None
-    return inputs, preset, warnings
+def initial(base=None):
+    """(inputs {name: int}, preset) the panel starts with: the defaults and
+    the default preset."""
+    return defaults(), presets.load(presets.DEFAULT, base)
 
 
 def check(inputs, preset):
@@ -67,7 +53,7 @@ def check(inputs, preset):
             App.setActiveDocument(active.Name)
 
 
-def rebuild(inputs, preset):
+def replace_box(inputs, preset):
     """Replace the open box (if any) by one built from inputs and preset,
     as build_box.py does in the GUI. Returns (doc, warnings). Raises
     ParamError / BuildError; the open box is gone then too."""
@@ -81,13 +67,11 @@ class _Panel:
     """A FreeCAD task panel: FreeCADGui.Control shows self.form and calls
     accept / reject."""
 
-    def __init__(self, rebuild):
+    def __init__(self):
         from PySide import QtCore, QtWidgets
-        inputs, self.preset, warnings = initial(rebuild)
-        for warning in warnings:
-            print(warning, file=sys.stderr)
+        inputs, self.preset = initial()
         self.form = QtWidgets.QWidget()
-        self.form.setWindowTitle("Rebuild box" if rebuild else "New box")
+        self.form.setWindowTitle("New box")
         layout = QtWidgets.QFormLayout(self.form)
         self.spins = {}
         for name, _, doc in INPUTS:
@@ -99,8 +83,6 @@ class _Panel:
             self.spins[name] = spin
         self.presets = QtWidgets.QComboBox()
         names = [n for n, _ in presets.list_presets()]
-        if self.preset.name not in names:  # its file is gone: the values stored in the box
-            self.presets.addItem(f"{self.preset.name} (stored in the box)", None)
         for n in names:
             self.presets.addItem(n, None if n == self.preset.name else n)
         self.presets.setCurrentIndex(max(0, self.presets.findData(None)))
@@ -108,7 +90,7 @@ class _Panel:
         self.message = QtWidgets.QLabel()
         self.message.setWordWrap(True)
         layout.addRow(self.message)
-        self.note = "A box is open: OK replaces it." if not rebuild and box_document() is not None else ""
+        self.note = "A box is open: OK replaces it." if box_document() is not None else ""
         self.timer = QtCore.QTimer(self.form)  # check 0.3 s after the last change, not on every click
         self.timer.setSingleShot(True)
         self.timer.setInterval(300)
@@ -141,7 +123,7 @@ class _Panel:
         if self.recheck():
             return False  # the panel stays open with the problem shown
         try:
-            doc, warnings = rebuild(self.inputs(), self.chosen())
+            doc, warnings = replace_box(self.inputs(), self.chosen())
         except (ParamError, BuildError) as e:
             self.message.setText(f"error: {e}")
             print(f"error: {e}", file=sys.stderr)
@@ -159,6 +141,6 @@ class _Panel:
         return True
 
 
-def show_panel(rebuild):
+def show_panel():
     import FreeCADGui
-    FreeCADGui.Control.showDialog(_Panel(rebuild))
+    FreeCADGui.Control.showDialog(_Panel())

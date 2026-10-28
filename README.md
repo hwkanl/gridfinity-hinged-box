@@ -23,7 +23,6 @@ Needs FreeCAD 1.1 or newer.
 | Command | What it does |
 |---|---|
 | New box | Build a new box from its size and a preset |
-| Rebuild box | Change the open box's size or preset and generate it again |
 | Edit box | Copy the open box's printable parts into PartDesign bodies to add your own features, then Export STLs |
 | Export STLs | Write the STLs of the edited box (if it is the active document) or of the generated box |
 | Presets | Make, edit and delete presets (printer/material tolerances) |

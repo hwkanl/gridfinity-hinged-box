@@ -1,5 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <rect x="6" y="22" width="52" height="36" rx="4" fill="#4a7ab8" stroke="#1d3557" stroke-width="3"/>
-  <rect x="4" y="10" width="56" height="14" rx="3" fill="#7fa7d9" stroke="#1d3557" stroke-width="3"/>
-  <text x="32" y="51" font-family="sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">T</text>
+  <g fill="#fcaf3e" stroke="#a04000" stroke-width="2.5">
+    <rect x="4" y="38" width="16" height="16" rx="2"/>
+    <rect x="24" y="30" width="16" height="24" rx="2"/>
+    <rect x="44" y="22" width="16" height="32" rx="2"/>
+  </g>
+  <g fill="#a04000">
+    <circle cx="12" cy="46" r="2.5"/>
+    <circle cx="32" cy="42" r="3"/>
+    <circle cx="52" cy="36" r="3.5"/>
+  </g>
+  <path d="M2 57h60" stroke="#888a85" stroke-width="2.5" stroke-linecap="round"/>
 </svg>

@@ -32,7 +32,7 @@ def guarded(work):
 
 def _new_box():
     from hwkan_gfbox import box_panel
-    guarded(lambda: box_panel.show_panel(rebuild=False))
+    guarded(lambda: box_panel.show_panel())
 
 
 def _generated_box():
@@ -51,11 +51,6 @@ def _export_active():  # also an active edited box
     from hwkan_gfbox import editable
     doc = App.ActiveDocument
     return _no_dialog() and ((doc is not None and editable.is_edited(doc)) or _generated_box())
-
-
-def _rebuild_box():
-    from hwkan_gfbox import box_panel
-    guarded(lambda: box_panel.show_panel(rebuild=True))
 
 
 def _edit_box():
@@ -123,8 +118,6 @@ def _test_prints():
 # (command id, icon, menu text, tool tip, run, is active)
 COMMAND_TABLE = [
     ("HwkanGfbox_NewBox", "new_box", "New box", "Build a new box from its size and a preset", _new_box, _no_dialog),
-    ("HwkanGfbox_RebuildBox", "rebuild_box", "Rebuild box", "Change the open box's size or preset and generate it again",
-     _rebuild_box, lambda: _no_dialog() and _generated_box()),
     ("HwkanGfbox_EditBox", "edit_box", "Edit box",
      "Copy the open box's printable parts into PartDesign bodies to add your own features, then Export STLs",
      _edit_box, lambda: _no_dialog() and _generated_box()),

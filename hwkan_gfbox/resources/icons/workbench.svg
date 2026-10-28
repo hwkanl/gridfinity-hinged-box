@@ -1,5 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <rect x="6" y="22" width="52" height="36" rx="4" fill="#4a7ab8" stroke="#1d3557" stroke-width="3"/>
-  <rect x="4" y="10" width="56" height="14" rx="3" fill="#7fa7d9" stroke="#1d3557" stroke-width="3"/>
-  <text x="32" y="51" font-family="sans-serif" font-size="26" font-weight="bold" fill="#ffffff" text-anchor="middle">G</text>
+  <rect x="8" y="32" width="48" height="24" rx="2" fill="#3465a4" stroke="#1d3557" stroke-width="2.5"/>
+  <g transform="rotate(24 56 32)"><rect x="6" y="21" width="50" height="11" rx="2" fill="#9fc0e8" stroke="#1d3557" stroke-width="2.5"/></g>
+  <circle cx="55" cy="31" r="4" fill="#edd400" stroke="#1d3557" stroke-width="2"/>
+  <rect x="14" y="38" width="16" height="12" rx="1" fill="#729fcf" stroke="#1d3557" stroke-width="1.5"/>
+  <rect x="34" y="38" width="16" height="12" rx="1" fill="#729fcf" stroke="#1d3557" stroke-width="1.5"/>
 </svg>
