@@ -42,8 +42,8 @@ def near(a, b, tol=1e-6):
 
 def first_cell(doc):
     """Center (x, y) of the first (-X, -Y) cell."""
-    return (-v(doc, "grid_w") / 2 + v(doc, "gf_pitch") / 2,
-            -v(doc, "grid_d") / 2 + v(doc, "gf_pitch") / 2)
+    c = v(doc, "bin_clearance") + v(doc, "gf_pitch") / 2
+    return -v(doc, "grid_w") / 2 + c, -v(doc, "grid_d") / 2 + c
 
 
 def cell_centers(doc):

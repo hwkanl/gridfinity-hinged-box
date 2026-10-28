@@ -15,8 +15,8 @@ def _near(a, b):
 def test_derived_defaults():
     s = _sheet()
     expected = {
-        "grid_w": 126, "grid_d": 85, "outer_w": 132, "outer_d": 91,
-        "rim_w": 136, "rim_d": 95,
+        "grid_w": 128, "grid_d": 86, "outer_w": 134, "outer_d": 92,
+        "rim_w": 138, "rim_d": 96,
         "bp_h": 4.65, "base_h": 4.75, "stack_lip_h": 4.4,
         "bin_top_z": 49.4, "ceiling_z": 49.9, "box_h": 52.9,
         "split_z": 45.15, "lid_h": 7.75,
@@ -39,14 +39,14 @@ def test_setting_an_input_updates_derived():
     s = _sheet()
     assert set_param(s, "gf_x", "4") == []
     s.Document.recompute()
-    assert _near(value(s, "grid_w"), 168)
+    assert _near(value(s, "grid_w"), 170)
 
 
 def test_bare_number_for_a_length_keeps_mm():
     s = _sheet()
     warnings = set_param(s, "wall_t", "4")
     s.Document.recompute()
-    assert _near(value(s, "outer_w"), 134), value(s, "outer_w")
+    assert _near(value(s, "outer_w"), 136), value(s, "outer_w")
     assert warnings and "design constant" in warnings[0]
 
 

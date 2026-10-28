@@ -54,15 +54,17 @@ def test_cavity_follows_grid_size():
     shape = get(doc, "Cavity").Shape
     assert is_sound(shape) and len(shape.Solids) == 1
     bb = shape.BoundBox
-    assert near(bb.XMax, 84) and near(bb.YMax, 42 + v(doc, "back_clearance") / 2), bb  # deeper by back_clearance
-    # the cells start at the front, so the extra depth is a strip at the back:
+    c = v(doc, "bin_clearance")
+    assert near(bb.XMax, 84 + c) and near(bb.YMax, 42 + c), bb  # bin_clearance all around
+    # the grid is centered, so the extra size is a strip along every wall:
     # no pocket there (floor), open above the pockets
-    y = v(doc, "grid_d") / 2 - v(doc, "back_clearance") / 2
     pocket_top = v(doc, "floor_t") + v(doc, "bp_h")
-    x = 21  # a cell center (gf_x 4)
-    assert not inside(doc, "Cavity", x, y, pocket_top - 1) and inside(doc, "Cavity", x, y, pocket_top + 1)
-    # the last row's pocket, 2 mm in from its cell's back edge (its wall slopes 45 deg)
-    assert inside(doc, "Cavity", x, y - v(doc, "back_clearance") / 2 - 2, pocket_top - 1)
+    x, y = 21, 21  # a cell center (gf_x 4, gf_y 2)
+    for px, py, ix, iy in ((x, 42 + c / 2, x, 40), (x, -42 - c / 2, x, -40),
+                           (84 + c / 2, y, 82, y), (-84 - c / 2, y, -82, y)):
+        assert not inside(doc, "Cavity", px, py, pocket_top - 1) and inside(doc, "Cavity", px, py, pocket_top + 1)
+        # the outer pocket, 2 mm in from its cell's edge (its wall slopes 45 deg)
+        assert inside(doc, "Cavity", ix, iy, pocket_top - 1), (ix, iy)
 
 
 def test_rejected_parameters_leave_no_document_open():

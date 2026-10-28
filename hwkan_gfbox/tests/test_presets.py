@@ -41,7 +41,7 @@ def _error(fn, *args, **kw):
 
 
 def test_names_are_the_twelve_preset_values():
-    assert len(presets.NAMES) == 12 and "back_clearance" not in presets.NAMES and "gf_x" not in presets.NAMES
+    assert len(presets.NAMES) == 12 and "bin_clearance" not in presets.NAMES and "gf_x" not in presets.NAMES
     assert presets.defaults()["dovetail_clearance"] == 0.09 and presets.defaults()["hinge_detent"] == 0.6
 
 
@@ -82,7 +82,7 @@ def test_file_errors_name_the_file_and_key():
     with _base() as b:
         cases = [
             ({"format": 1, "values": {"gf_x": 4}}, "'gf_x' is not a preset value"),
-            ({"format": 1, "values": {"back_clearance": 1}}, "'back_clearance' is not a preset value"),
+            ({"format": 1, "values": {"bin_clearance": 1}}, "'bin_clearance' is not a preset value"),
             ({"format": 1, "value": {}}, "unknown key"),
             ({"format": 1, "values": {"hinge_clearance": "0.2 mm"}}, "'hinge_clearance' must be a number"),
             ({"format": 1, "values": {"hinge_clearance": True}}, "'hinge_clearance' must be a number"),

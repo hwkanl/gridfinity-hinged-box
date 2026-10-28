@@ -50,7 +50,7 @@ def test_values_and_overrides_route_to_their_sheet():
         internal = doc.getObject(INTERNAL_SHEET)
         assert internal.getContents(internal.getCellFromAlias("wall_t")) == "=4 mm"
         assert value(params, "wall_t") == 4 and value(params, "hook_preload") == 0.3
-        assert value(params, "grid_w") == 4 * 42  # a derived formula on Internal follows Params.gf_x
+        assert value(params, "grid_w") == 4 * 42 + 2  # a derived formula on Internal follows Params.gf_x
         assert value(internal, "gf_x") == 4        # routing works from any sheet
         preset = doc.getObject(PRESET_SHEET)
         assert preset.getContents(preset.getCellFromAlias("hook_preload")) == "=0.3 mm"
@@ -75,9 +75,9 @@ def test_expressions_name_the_right_sheet():
     assert not bad, bad
 
 
-def test_back_clearance_is_internal_and_presets_hold_tolerances_and_fits():
+def test_bin_clearance_is_internal_and_presets_hold_tolerances_and_fits():
     from hwkan_gfbox.params import DESIGN, FIT, PRESET_TIERS, TOLERANCE
-    assert TIERS["back_clearance"] == DESIGN
+    assert TIERS["bin_clearance"] == DESIGN
     assert PRESET_TIERS == (TOLERANCE, FIT)
     assert sorted(n for n, t in TIERS.items() if t in PRESET_TIERS) == sorted([
         "feet_xy_clearance", "feet_z_clearance", "lip_clearance", "hinge_clearance", "dovetail_clearance",

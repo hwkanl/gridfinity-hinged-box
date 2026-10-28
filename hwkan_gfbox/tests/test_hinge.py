@@ -33,13 +33,13 @@ def test_hinge_derived_defaults():
 def test_hinge_count_is_an_input():
     assert value(_sheet(), "hinge_count") == 2
     s = _sheet(("hinge_count", "3"))
-    assert value(s, "hinge_count") == 3 and near(value(s, "hinge_pitch"), 42), value(s, "hinge_pitch")
+    assert value(s, "hinge_count") == 3 and near(value(s, "hinge_pitch"), 128 / 3), value(s, "hinge_pitch")
     assert value(_sheet(("gf_x", "8")), "hinge_count") == 2  # no longer follows the grid width
 
 
 def test_three_hinges_build():
     doc = built(("hinge_count", "3"))
-    assert [round(c, 6) for c in hinge_centers(doc)] == [-42.0, 0.0, 42.0]
+    assert [round(c, 6) for c in hinge_centers(doc)] == [-42.666667, 0.0, 42.666667]
     assert len(get(doc, "LidKnuckles").Shape.Solids) == 6
     assert is_sound(get(doc, "Lid").Shape) and len(get(doc, "Lid").Shape.Solids) == 1
 
@@ -66,7 +66,7 @@ def hinge_centers(doc):
 
 
 def test_default_hinge_centers():
-    assert [round(c, 6) for c in hinge_centers(built())] == [-31.5, 31.5]
+    assert [round(c, 6) for c in hinge_centers(built())] == [-32.0, 32.0]
 
 
 def test_lid_knuckles_object():

@@ -156,17 +156,17 @@ def test_hinge_rules():
 
 def test_knuckle_flare_rules():
     two = (("gf_x", "2"), ("gf_y", "2"))
-    # 2x2: the pad rule is tight: 21 + hinge_root_len / 2 <= 45 - 8 = 37 mm
-    _validate_with(*two, ("knuckle_flare", "43"))  # root 31.62 -> 36.81 mm
-    msg = _error_of(*two, ("knuckle_flare", "44"))  # root 32.18 -> 37.09 mm
+    # 2x2: the pad rule is tight: 21.5 + hinge_root_len / 2 <= 46 - 8 = 38 mm
+    _validate_with(*two, ("knuckle_flare", "45"))  # root 32.75 -> 37.88 mm
+    msg = _error_of(*two, ("knuckle_flare", "46"))  # root 33.35 -> 38.17 mm
     assert "corner pads" in msg and "flared root" in msg, msg
-    assert "corner pads" in _error_of(*two, ("knuckle_flare", "45"))
+    assert "corner pads" in _error_of(*two, ("knuckle_flare", "47"))
     _validate_with(("gf_x", "3"), ("gf_y", "2"), ("knuckle_flare", "45"))
     _validate_with(("knuckle_flare", "0"))
-    # neighbouring roots: hinge_root_len < hinge_pitch (42 mm on 2x2; 60 deg gives 45.01)
+    # neighbouring roots: hinge_root_len < hinge_pitch (43 mm on 2x2; 60 deg gives 45.01)
     msg = _error_of(*two, ("knuckle_flare", "60"), ("pad_reach", "3"))
     assert "neighbouring hinges" in msg, msg
-    # hinge_pitch 63: flare 68 gives root 16 + 41.46 = 57.46 < 63, no such error
+    # hinge_pitch 64: flare 68 gives root 16 + 41.46 = 57.46 < 64, no such error
     assert "neighbouring" not in _error_of(("gf_x", "3"), ("knuckle_flare", "68"))
     for text in ("90", "95", "-5"):
         assert "knuckle_flare must be between" in _error_of(("knuckle_flare", text)), text
@@ -174,7 +174,7 @@ def test_knuckle_flare_rules():
 
 def test_pad_reach_limits():
     assert "pad_reach must be at least wall_t" in _error_of(("pad_reach", "2"))
-    assert "2 * pad_reach must be less than" in _error_of(("pad_reach", "45.5"))  # outer_d 91
+    assert "2 * pad_reach must be less than" in _error_of(("pad_reach", "46"))  # outer_d 92
     _validate_with(("pad_reach", "8"))
 
 
@@ -186,8 +186,8 @@ def test_leaf_rules():
     assert "leaf body must clear the slot" in _error_of(("dovetail_clearance", "0.4"))  # 0.346 < 0.4
     assert "rib must hold the slot" in _error_of(("hinge_rib_w", "14"))  # < 13.86 + 1.6
     two = (("gf_x", "2"), ("gf_y", "2"))
-    assert "hinge ribs must clear the corner pads" in _error_of(*two, ("hinge_rib_w", "34"))  # 21 + 17 > 37
-    assert "neighbouring hinge ribs" in _error_of(*two, ("hinge_rib_w", "42"))
+    assert "hinge ribs must clear the corner pads" in _error_of(*two, ("hinge_rib_w", "34"))  # 21.5 + 17 > 38
+    assert "neighbouring hinge ribs" in _error_of(*two, ("hinge_rib_w", "43"))
     assert "slot floor" in _error_of(*two, ("gf_z_units", "1"))  # 10.15 - 3 - 10 - 0.15 < 0
     msg = _error_of(("leaf_r", "4.4"))
     assert "clear the lid face" in msg and "leaf_r must be <=" in msg and "leaf top" in msg, msg

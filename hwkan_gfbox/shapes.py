@@ -13,8 +13,8 @@ class BuildError(RuntimeError):
 
 
 # Center of the first (-X, -Y) grid cell.
-FIRST_CELL_X = "-Internal.grid_w / 2 + Internal.gf_pitch / 2"
-FIRST_CELL_Y = "-Internal.grid_d / 2 + Internal.gf_pitch / 2"
+FIRST_CELL_X = "-Internal.grid_w / 2 + Internal.bin_clearance + Internal.gf_pitch / 2"
+FIRST_CELL_Y = "-Internal.grid_d / 2 + Internal.bin_clearance + Internal.gf_pitch / 2"
 
 
 def get(doc, label):

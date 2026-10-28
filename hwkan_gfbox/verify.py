@@ -19,9 +19,9 @@ from hwkan_gfbox.shapes import get
 from hwkan_gfbox.sheet import SHEET_NAME, value
 from hwkan_gfbox.export import ExportError, check_part, latch_print_shapes, leaves_print_shapes, print_shape
 
-# The preset's values, plus back_clearance (a design value now, but still a gap
-# whose extremes matter: the closing lid against the back row of bins).
-TOLERANCE_NAMES = [name for name, _, tier, _ in PARAMS if tier in PRESET_TIERS] + ["back_clearance"]
+# The preset's values, plus bin_clearance (a design value now, but still a gap
+# whose extremes matter: the closing lid against the bins).
+TOLERANCE_NAMES = [name for name, _, tier, _ in PARAMS if tier in PRESET_TIERS] + ["bin_clearance"]
 SIZES = [
     ("2x2x3", [("gf_x", "2"), ("gf_y", "2"), ("gf_z_units", "3")]),
     ("3x2x6", []),
@@ -34,16 +34,16 @@ SIZES = [
 # about 0.48 at default dimensions (the leaf's front must clear the lid face
 # while it swings); dovetail_clearance at most about 0.35 (the leaf body in its
 # slot). Those two get their own extremes.
-# The latch needs latch_clearance > 0 (printed in place). back_clearance must
+# The latch needs latch_clearance > 0 (printed in place). bin_clearance must
 # exceed about 0.51 at default dimensions (the closing lid's inner back edge
 # reaches 0.76 in from the back wall below the bin tops; the bins stand 0.25
 # inside their cells).
 # nub_clearance must stay below leaf_notch_h - hinge_nub_h (0.5).
 # hook_preload and lock_detent are interferences, not gaps: low 0, high 0.5
 # (lock_detent's limit, lock_key_d).
-_LOW = {"hinge_clearance": "0.1", "latch_clearance": "0.1", "hook_preload": "0", "back_clearance": "0.6"}
+_LOW = {"hinge_clearance": "0.1", "latch_clearance": "0.1", "hook_preload": "0", "bin_clearance": "0.6"}
 _HIGH = {"hinge_clearance": "0.4", "dovetail_clearance": "0.25", "latch_clearance": "0.4", "hook_preload": "0.5",
-         "back_clearance": "1.5", "nub_clearance": "0.4"}
+         "bin_clearance": "1.5", "nub_clearance": "0.4"}
 TOLERANCE_SETS = [
     ("tol=default", []),
     ("tol=low", [(n, _LOW.get(n, "0")) for n in TOLERANCE_NAMES]),
@@ -81,7 +81,7 @@ def checks(doc):
     lt, lc, lh, wt = v("lip_thickness"), v("lip_clearance"), v("lip_height"), v("wall_t")
     fxy = v("feet_xy_clearance")
     m = (wt + e) / 2  # middle of the rim, outward from the cavity wall
-    cx0, cy0 = -gw / 2 + pitch / 2, -gd / 2 + pitch / 2
+    cx0, cy0 = (-g / 2 + v("bin_clearance") + pitch / 2 for g in (gw, gd))
     n_hinges = int(v("hinge_count"))
     centers = [(cx0 + i * pitch, cy0 + j * pitch)
                for i in range(int(v("gf_x"))) for j in range(int(v("gf_y")))]
@@ -275,23 +275,34 @@ def checks(doc):
             hits.append(angle)
     yield ("the lid opens 0-90 deg without entering the bottom part or the leaves "
            f"(contact at: {hits or 'none'} deg)"), not hits
-    # ... nor the back row of bins: their back wall above the parting line, a
-    # 0.2 mm skin with the stacking lip's top chamfer (stack_ch_high, 45 deg
+    # ... nor the outer bins: their walls above the parting line, all around,
+    # a 0.2 mm skin with the stacking lip's top chamfer (stack_ch_high, 45 deg
     # in and down from the top edge) inside it, where the lid's feet nest.
     top, ch = v("bin_top_z"), v("stack_ch_high")
     inset = (pitch - v("base_top")) / 2  # bins stand this far inside their cells
-    bin_back = -gd / 2 + v("gf_y") * pitch - inset
-    section = Part.Face(Part.makePolygon([App.Vector(-gw / 2 + inset, y, z) for y, z in (
-        (bin_back, sz), (bin_back, top), (bin_back - ch, top - ch), (bin_back - 0.2, top - ch),
-        (bin_back - 0.2, sz), (bin_back, sz))]))
-    bins = section.extrude(App.Vector(gw - 2 * inset, 0, 0))
+    bx, by = v("gf_x") * pitch / 2 - inset, v("gf_y") * pitch / 2 - inset  # the grid is centered
+
+    def skin(side, half_len):
+        """The bins' skin along their +Y side, at y = side, x from -half_len to half_len."""
+        section = Part.Face(Part.makePolygon([App.Vector(-half_len, y, z) for y, z in (
+            (side, sz), (side, top), (side - ch, top - ch), (side - 0.2, top - ch), (side - 0.2, sz), (side, sz))]))
+        return section.extrude(App.Vector(2 * half_len, 0, 0))
+
+    origin = App.Vector(0, 0, 0)
+    back_skin, side_skin = skin(by, bx), skin(bx, by)
+    side_skin.rotate(origin, App.Vector(0, 0, 1), -90)  # its +Y side to +X
+    skins = {"back": back_skin, "front": back_skin.mirror(origin, App.Vector(0, 1, 0)),
+             "+X": side_skin, "-X": side_skin.mirror(origin, App.Vector(1, 0, 0))}
+    # The lid without its middle (well inside the bins, lifting away): its walls,
+    # the outer feet, knuckles and lips.
+    k = 5
+    lid_ring = lid.cut(Part.makeBox(2 * (bx - k), 2 * (by - k), bh, App.Vector(k - bx, k - by, sz - 1)))
     bin_hits = []
     for angle in range(0, 91, 2):
-        opened = lid_back.copy()
+        opened = lid_ring.copy()
         opened.rotate(App.Vector(0, ya, za), App.Vector(1, 0, 0), -angle)
-        if opened.common(bins).Volume > EPS:
-            bin_hits.append(angle)
-    yield f"the lid opens 0-90 deg clear of the back row of bins (contact at: {bin_hits or 'none'} deg)", not bin_hits
+        bin_hits += [f"{name} {angle}" for name, s in skins.items() if opened.common(s).Volume > EPS]
+    yield f"the lid opens 0-90 deg clear of the outer bins (contact at: {bin_hits or 'none'} deg)", not bin_hits
 
     yield from _leaf_checks(doc, v, near, bottom, lid, ya, za)
     yield from _lock_checks(doc, v, near, bottom, lid)
