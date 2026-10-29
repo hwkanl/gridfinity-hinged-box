@@ -57,5 +57,5 @@ def build_grooves(doc):
         (f"Internal.groove_d + {ov}", f"Internal.groove_in + Internal.groove_d + {ov}"),
     ])
     ring = cut(doc, "GrooveRing", outer, inner)
-    return _keep_corners(doc, "Grooves", ring, "Internal.stack_reach + Preset.stack_clearance",
+    return _keep_corners(doc, "Grooves", ring, "Internal.stack_reach + Internal.stack_clearance",
                          f"-3 * {ov}", f"Internal.groove_d + 6 * {ov}")

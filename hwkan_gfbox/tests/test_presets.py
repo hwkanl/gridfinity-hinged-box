@@ -40,9 +40,11 @@ def _error(fn, *args, **kw):
     raise AssertionError(f"accepted: {args} {kw}")
 
 
-def test_names_are_the_thirteen_preset_values():
-    assert len(presets.NAMES) == 13 and "bin_clearance" not in presets.NAMES and "gf_x" not in presets.NAMES
-    assert presets.defaults()["dovetail_clearance"] == 0.1 and presets.defaults()["hinge_detent"] == 0.6
+def test_names_are_the_seven_preset_values():
+    """What the test prints check, hinge then latch; the other gaps are design values."""
+    assert presets.NAMES == ["hinge_clearance", "hinge_dovetail_fit", "hinge_detent_height", "latch_clearance",
+                             "latch_dovetail_fit", "latch_detent_height", "latch_preload"]
+    assert presets.defaults()["hinge_dovetail_fit"] == 0.1 and presets.defaults()["hinge_detent_height"] == 0.6
 
 
 def test_default_needs_no_file():
@@ -55,11 +57,11 @@ def test_default_needs_no_file():
 
 def test_partial_file_takes_defaults():
     with _base() as b:
-        _in_dir(b, "mine", {"format": 1, "values": {"hinge_clearance": 0.15, "lock_detent": 0}})
+        _in_dir(b, "mine", {"format": 1, "values": {"hinge_clearance": 0.15, "latch_detent_height": 0}})
         p = presets.load("mine", b)
         assert (p.name, p.ref, p.note, p.calibration) == ("mine", "mine", "", None)
-        assert p.values["hinge_clearance"] == 0.15 and p.values["lock_detent"] == 0.0
-        assert isinstance(p.values["lock_detent"], float)
+        assert p.values["hinge_clearance"] == 0.15 and p.values["latch_detent_height"] == 0.0
+        assert isinstance(p.values["latch_detent_height"], float)
         assert p.values["latch_clearance"] == presets.defaults()["latch_clearance"]
         _in_dir(b, "empty", {"format": 1, "values": {}})
         assert presets.load("empty", b).values == presets.defaults()
@@ -120,9 +122,9 @@ def test_paths_are_read_as_files_and_kept_absolute():
     with _base() as b:
         d = tempfile.mkdtemp(prefix="presets_path")
         try:
-            path = _write(os.path.join(d, "shared.json"), {"format": 1, "values": {"lip_clearance": 0.3}})
+            path = _write(os.path.join(d, "shared.json"), {"format": 1, "values": {"latch_clearance": 0.3}})
             p = presets.load(path, b)
-            assert (p.name, p.ref, p.values["lip_clearance"]) == ("shared", path, 0.3)
+            assert (p.name, p.ref, p.values["latch_clearance"]) == ("shared", path, 0.3)
             here = os.getcwd()
             os.chdir(d)
             try:
@@ -138,7 +140,7 @@ def test_paths_are_read_as_files_and_kept_absolute():
 def test_overrides_are_mm_pairs_in_params_order():
     pairs = presets.overrides(presets.load("default"))
     assert [n for n, _ in pairs] == presets.NAMES
-    assert dict(pairs)["dovetail_clearance"] == "0.1 mm" and dict(pairs)["lock_detent"] == "0.4 mm"
+    assert dict(pairs)["hinge_dovetail_fit"] == "0.1 mm" and dict(pairs)["latch_detent_height"] == "0.4 mm"
 
 
 def test_new_list_and_path():
@@ -173,7 +175,7 @@ def test_shipped_tight_is_found_after_the_users_and_read_only():
     with _base() as b:
         t = presets.load("Tight", b)
         assert presets.is_shipped(presets.resolve("Tight", b)) and presets.read_only("Tight", b)
-        assert t.values["hinge_clearance"] == 0.15 and t.values["dovetail_clearance"] == 0.075
+        assert t.values["hinge_clearance"] == 0.15 and t.values["hinge_dovetail_fit"] == 0.075
         assert dict(presets.list_presets(b))["Tight"] == t.note and t.note.startswith("shipped")
         assert presets.read_only("default", b) and not presets.read_only("nope", b)
         # a user preset of the same name wins, and is the user's to change

@@ -300,7 +300,7 @@ def build_hinge_nubs(doc):
     """HingeNubs: per hinge, the detent nub above the slot, leaf_w wide: a
     shelf on the rib's top behind the leaf (from the rim band out to the
     slot's wide face, which the leaf's bed face lies in) up to hinge_nub_top,
-    and on it the nub, hinge_detent out of that face from hinge_nub_bot (the
+    and on it the nub, hinge_detent_height out of that face from hinge_nub_bot (the
     flat ledge the leaf's notch catches on) to hinge_nub_top."""
     shelf = _primitive(doc, "Part::Box", "HingeNubShelf", {
         "Length": "Internal.leaf_w",
@@ -310,7 +310,7 @@ def build_hinge_nubs(doc):
     place(shelf, LEAF_X, "Internal.outer_d / 2 - Internal.overlap", "Internal.rib_top - Internal.overlap")
     nub = _primitive(doc, "Part::Box", "HingeNubBlock", {
         "Length": "Internal.leaf_w",
-        "Width": "Preset.hinge_detent + Internal.overlap",
+        "Width": "Preset.hinge_detent_height + Internal.overlap",
         "Height": "Internal.hinge_nub_h",
     })
     place(nub, LEAF_X, f"{SLOT_Y} - Internal.overlap", "Internal.hinge_nub_bot")

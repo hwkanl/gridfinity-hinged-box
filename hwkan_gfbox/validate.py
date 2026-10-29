@@ -1,7 +1,7 @@
 """Parameter validation, run before any geometry is built."""
 import math
 
-from hwkan_gfbox.params import FIT, INPUT, PARAMS, TOLERANCE
+from hwkan_gfbox.params import DESIGN_GAPS, FIT, INPUT, PARAMS, TOLERANCE
 from hwkan_gfbox.sheet import ParamError, value
 
 FEET_XY_CLEARANCE_MAX = 0.5  # mm; keeps the feet's bottom corner radius positive
@@ -17,7 +17,7 @@ def validate(sheet):
     for name, _, tier, _ in PARAMS:
         if tier == INPUT and (v(name) != int(v(name)) or v(name) < 1):
             errors.append(f"{name} must be a whole number >= 1 (got {v(name):g})")
-        if tier in (TOLERANCE, FIT) and v(name) < 0:
+        if (tier in (TOLERANCE, FIT) or name in DESIGN_GAPS) and v(name) < 0:
             errors.append(f"{name} must be >= 0 (got {v(name):g} mm)")
     if min(v("gf_x"), v("gf_y")) < 2:
         errors.append("gf_x and gf_y must be at least 2 for a hinged box "
@@ -116,7 +116,7 @@ def validate(sheet):
         if pin_base >= v("knuckle_r"):
             errors.append("pin_dia / 2 + overlap / tan(pin_angle) must be less than knuckle_r "
                           f"(the pin's widened base must fit in the knuckle; {pin_base:g} >= {v('knuckle_r'):g} mm)")
-    hc, dc = v("hinge_clearance"), v("dovetail_clearance")
+    hc, dc = v("hinge_clearance"), v("hinge_dovetail_fit")
     if hc <= 0:
         errors.append(f"hinge_clearance must be > 0 (got {hc:g} mm): the free leaf is printed in place")
     if v("leaf_r") <= v("pin_dia") / 2 + hc:
@@ -135,11 +135,11 @@ def validate(sheet):
     else:
         # implied by the body-clearance and socket rules; kept as the spec's guard
         if v("dovetail_w") - 2 * v("dovetail_side_in") <= 0:
-            errors.append("dovetail_w - 2 * dovetail_clearance / sin(dovetail_angle) must be > 0 "
+            errors.append("dovetail_w - 2 * hinge_dovetail_fit / sin(dovetail_angle) must be > 0 "
                           f"({v('dovetail_w'):g} - 2 * {v('dovetail_side_in'):g} mm)")
         body_gap = (v("dovetail_w") - v("leaf_w")) / 2 * math.sin(math.radians(v("dovetail_angle")))
         if body_gap < dc - 1e-9:
-            errors.append("the leaf body must clear the slot by dovetail_clearance: (dovetail_w - leaf_w) / 2 "
+            errors.append("the leaf body must clear the slot by hinge_dovetail_fit: (dovetail_w - leaf_w) / 2 "
                           f"* sin(dovetail_angle) = {body_gap:g} < {dc:g} mm")
         if v("hinge_rib_w") < v("dovetail_base_w") + 2 * v("min_wall"):
             errors.append("hinge_rib_w must be >= dovetail_base_w + 2 * min_wall: the rib must hold the slot "
@@ -155,9 +155,9 @@ def validate(sheet):
     if v("hinge_rib_w") >= v("hinge_pitch"):
         errors.append("neighbouring hinge ribs must not touch: hinge_rib_w must be less than hinge_pitch "
                       f"({v('hinge_rib_w'):g} >= {v('hinge_pitch'):g} mm); lower hinge_count")
-    if not 0 <= v("hinge_detent") < v("leaf_notch_d"):
-        errors.append(f"hinge_detent must be between 0 and leaf_notch_d = {v('leaf_notch_d'):g} mm "
-                      f"(got {v('hinge_detent'):g} mm)")
+    if not 0 <= v("hinge_detent_height") < v("leaf_notch_d"):
+        errors.append(f"hinge_detent_height must be between 0 and leaf_notch_d = {v('leaf_notch_d'):g} mm "
+                      f"(got {v('hinge_detent_height'):g} mm)")
     if v("hinge_nub_lift") < v("overlap") or v("hinge_nub_h") <= 0:
         errors.append(f"the hinge nub must stand clear above the slot (hinge_nub_lift >= {v('overlap'):g} mm) "
                       "and hinge_nub_h must be > 0")
@@ -166,7 +166,7 @@ def validate(sheet):
                       f"than dovetail_drop ({v('hinge_nub_lift') + v('hinge_nub_h'):g} >= {v('dovetail_drop'):g} mm)")
     if v("leaf_notch_bot") + v("leaf_notch_h") <= v("hinge_nub_top"):
         errors.append("the leaf's notch must reach past the hinge nub's top: leaf_notch_h must be > "
-                      f"hinge_nub_h + nub_clearance = {v('hinge_nub_h') + v('nub_clearance'):g} mm")
+                      f"hinge_nub_h + hinge_detent_clearance = {v('hinge_nub_h') + v('hinge_detent_clearance'):g} mm")
     if v("slot_floor") <= 0:
         errors.append("the slot floor must stay above the box bottom: split_z - dovetail_drop - dovetail_len "
                       f"= {v('slot_floor'):g} <= 0 mm")
@@ -207,7 +207,7 @@ def validate(sheet):
         if sz - sr < mw:
             errors.append(f"the lip under the seat must be at least min_wall ({mw:g} mm) thick: its floor, "
                           f"lock_seat_z - lock_seat_r = {sz - sr:g} mm above the parting line (lower lock_bar_drop "
-                          "or lock_seat_clearance)")
+                          "or latch_seat_clearance)")
         if v("lock_lip_e") - (su + sr) < mw:
             errors.append("the stop along the lip's front edge must be at least min_wall wide: lock_lip_e - "
                           f"(lock_seat_u + lock_seat_r) = {v('lock_lip_e') - (su + sr):g} mm < {mw:g} mm "
@@ -215,20 +215,20 @@ def validate(sheet):
         if not sz <= top <= v("lid_h"):
             errors.append(f"the stop's top (lock_stop_top = {top:g} mm) must be between the seat's center "
                           f"({sz:g} mm) and the lid top (lid_h = {v('lid_h'):g} mm): adjust lock_stop_rise")
-    above_key = v("dovetail_t") - v("lock_dovetail_clearance") - v("lock_key_d")
+    above_key = v("dovetail_t") - v("latch_dovetail_fit") - v("lock_key_d")
     if above_key < v("min_wall") or v("lock_key_d") <= 0:
         errors.append("the latch base's dovetail above its key must be at least min_wall thick and the key "
-                      f"must have depth: dovetail_t - lock_dovetail_clearance - lock_key_d = {above_key:g} mm, "
+                      f"must have depth: dovetail_t - latch_dovetail_fit - lock_key_d = {above_key:g} mm, "
                       f"lock_key_d = {v('lock_key_d'):g} mm")
     if not 0 < v("lock_key_h") < v("latch_top") - v("pad_bot") - v("lock_key_d"):
         errors.append(f"lock_key_h must be > 0 and leave room for the flare below the base's top "
                       f"(got {v('lock_key_h'):g}, base height {v('latch_top') - v('pad_bot'):g} mm)")
-    # The part above the key passes the nub with lock_key_d - lock_detent to
-    # spare (the nub moves out with lock_dovetail_clearance); touching is fine,
+    # The part above the key passes the nub with lock_key_d - latch_detent_height to
+    # spare (the nub moves out with latch_dovetail_fit); touching is fine,
     # the plastic flexes.
-    if not 0 <= v("lock_detent") <= v("lock_key_d"):
-        errors.append(f"lock_detent must be between 0 and lock_key_d = {v('lock_key_d'):g} mm, so the base's "
-                      f"shallower part above its key passes the nub (got {v('lock_detent'):g} mm)")
+    if not 0 <= v("latch_detent_height") <= v("lock_key_d"):
+        errors.append(f"latch_detent_height must be between 0 and lock_key_d = {v('lock_key_d'):g} mm, so the base's "
+                      f"shallower part above its key passes the nub (got {v('latch_detent_height'):g} mm)")
     if not 0 < v("lock_detent_ramp") < 90:
         errors.append(f"lock_detent_ramp must be between 0 and 90 deg (got {v('lock_detent_ramp'):g})")
     lc = v("latch_clearance")

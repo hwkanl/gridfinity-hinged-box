@@ -94,7 +94,7 @@ def build_tongue(doc):
     """The bottom's round alignment bead: the ring of the channel's section
     less lip_clearance, kept from `overlap` below the split up. (Fusing the
     whole ring, deep into the rim, made an invalid Bottom for some sizes.)"""
-    ring = _round_ring(doc, "TongueRing", "Internal.lip_r - Preset.lip_clearance")
+    ring = _round_ring(doc, "TongueRing", "Internal.lip_r - Internal.lip_clearance")
     above = box(doc, "TongueAbove", HALF_XY, HALF_XY, "Internal.split_z - Internal.overlap", "Internal.lid_h")
     return common(doc, "Tongue", ring, above)
 

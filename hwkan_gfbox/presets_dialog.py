@@ -154,10 +154,12 @@ def run_dialog():
             val = QtWidgets.QTableWidgetItem(repr(p.values[key]))
             desc = QtWidgets.QTableWidgetItem(DESCRIPTIONS[key])
             desc.setFlags(desc.flags() & ~QtCore.Qt.ItemIsEditable)
+            desc.setToolTip(DESCRIPTIONS[key])
             if read_only:
                 val.setFlags(val.flags() & ~QtCore.Qt.ItemIsEditable)
             table.setItem(i, 0, val)
             table.setItem(i, 1, desc)
+        table.resizeRowsToContents()  # the descriptions wrap
         save_b.setEnabled(not read_only)
         delete_b.setEnabled(not read_only)
         kind = "built-in" if p.name == presets.DEFAULT else "shipped with the addon"

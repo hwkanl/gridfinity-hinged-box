@@ -43,21 +43,21 @@ def test_values_and_overrides_route_to_their_sheet():
     doc = App.newDocument("split_test")
     try:
         params = create_params_sheet(doc)
-        assert set_param(params, "hook_preload", "0.3") == []           # FIT: no warning
+        assert set_param(params, "latch_preload", "0.3") == []           # FIT: no warning
         assert set_param(params, "wall_t", "4") != []                    # internal: warning
         set_param(params, "gf_x", "4")
         doc.recompute()
         internal = doc.getObject(INTERNAL_SHEET)
         assert internal.getContents(internal.getCellFromAlias("wall_t")) == "=4 mm"
-        assert value(params, "wall_t") == 4 and value(params, "hook_preload") == 0.3
+        assert value(params, "wall_t") == 4 and value(params, "latch_preload") == 0.3
         assert value(params, "grid_w") == 4 * 42 + 2  # a derived formula on Internal follows Params.gf_x
         assert value(internal, "gf_x") == 4        # routing works from any sheet
         preset = doc.getObject(PRESET_SHEET)
-        assert preset.getContents(preset.getCellFromAlias("hook_preload")) == "=0.3 mm"
-        set_param(params, "lock_seat_clearance", "0.4")
+        assert preset.getContents(preset.getCellFromAlias("latch_preload")) == "=0.3 mm"
+        set_param(params, "latch_dovetail_fit", "0.15")
         doc.recompute()
-        # a derived formula on Internal follows Preset.lock_seat_clearance
-        assert abs(value(params, "lock_seat_r") - (value(params, "bar_r") + 0.4)) < 1e-9
+        # a derived formula on Internal follows Preset.latch_dovetail_fit
+        assert abs(value(params, "lock_nub_h") - (0.15 + value(params, "latch_detent_height"))) < 1e-9
     finally:
         App.closeDocument(doc.Name)
 
@@ -75,11 +75,10 @@ def test_expressions_name_the_right_sheet():
     assert not bad, bad
 
 
-def test_bin_clearance_is_internal_and_presets_hold_tolerances_and_fits():
-    from hwkan_gfbox.params import DESIGN, FIT, PRESET_TIERS, TOLERANCE
-    assert TIERS["bin_clearance"] == DESIGN
+def test_design_gaps_are_internal_and_presets_hold_tolerances_and_fits():
+    from hwkan_gfbox.params import DESIGN, DESIGN_GAPS, FIT, PRESET_TIERS, TOLERANCE
+    assert all(TIERS[n] == DESIGN for n in DESIGN_GAPS) and "bin_clearance" in DESIGN_GAPS
     assert PRESET_TIERS == (TOLERANCE, FIT)
     assert sorted(n for n, t in TIERS.items() if t in PRESET_TIERS) == sorted([
-        "feet_xy_clearance", "feet_z_clearance", "lip_clearance", "hinge_clearance", "dovetail_clearance",
-        "nub_clearance", "latch_clearance", "lock_dovetail_clearance", "lock_seat_clearance",
-        "stack_clearance", "hook_preload", "lock_detent", "hinge_detent"])
+        "hinge_clearance", "hinge_dovetail_fit", "latch_clearance", "latch_dovetail_fit",
+        "latch_preload", "latch_detent_height", "hinge_detent_height"])

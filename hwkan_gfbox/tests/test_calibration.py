@@ -30,18 +30,18 @@ def _error(fn, *args):
 def test_the_table():
     assert list(cal.TESTS) == list("ABCDEFG") and cal.DEFAULT_TESTS == "ABCDEF"
     want = {"A": ("hinge_clearance", 0.025, "hinge_lid", None, "stuck", "sloppy", True),
-            "B": ("dovetail_clearance", 0.025, "leaf", "hinge_rib", "tight", "loose", True),
-            "C": ("hinge_detent", 0.05, "hinge_rib", "leaf", "hard", "weak", False),
+            "B": ("hinge_dovetail_fit", 0.025, "leaf", "hinge_rib", "tight", "loose", True),
+            "C": ("hinge_detent_height", 0.05, "hinge_rib", "leaf", "hard", "weak", False),
             "D": ("latch_clearance", 0.025, "latch", None, "stuck", "sloppy", True),
-            "E": ("lock_dovetail_clearance", 0.025, "latch_base", "lock_pad", "tight", "loose", True),
-            "F": ("lock_detent", 0.05, "lock_pad", "latch_base", "hard", "weak", False),
-            "G": ("hook_preload", 0.05, "latch_keyless", None, "hard", "weak", False)}
+            "E": ("latch_dovetail_fit", 0.025, "latch_base", "lock_pad", "tight", "loose", True),
+            "F": ("latch_detent_height", 0.05, "lock_pad", "latch_base", "hard", "weak", False),
+            "G": ("latch_preload", 0.05, "latch_keyless", None, "hard", "weak", False)}
     for letter, row in want.items():
         t = cal.TESTS[letter]
         assert (t.param, t.step, t.piece, t.partner, t.tight, t.loose, t.tight_up) == row, letter
         assert t.check, letter
-    assert cal.TESTS["B"].settings == (("hinge_detent", "0"),)
-    assert cal.TESTS["E"].settings == (("lock_detent", "0"),)
+    assert cal.TESTS["B"].settings == (("hinge_detent_height", "0"),)
+    assert cal.TESTS["E"].settings == (("latch_detent_height", "0"),)
 
 
 def test_numbers_and_values():
@@ -98,7 +98,7 @@ def test_pick_records_and_moves_on():
     assert p.values["hinge_clearance"] == 0.175
     s = p.calibration
     assert s["chosen"] == {"A": 8} and s["current"] == "B" and s["written"] is False
-    assert s["sweep"] == [3, 4, 5, 6, 7]  # dovetail_clearance 0.09 -> 5
+    assert s["sweep"] == [3, 4, 5, 6, 7]  # hinge_dovetail_fit 0.09 -> 5
 
 
 def test_the_last_pick_ends_the_run():
@@ -107,7 +107,7 @@ def test_the_last_pick_ends_the_run():
     p.calibration["written"] = True
     cal.answer(p, "F8", ALL)
     assert p.calibration["current"] is None and p.calibration["sweep"] == [] and cal.state(p) is None
-    assert p.values["lock_detent"] == 0.35
+    assert p.values["latch_detent_height"] == 0.35
 
 
 def test_words_shift_the_right_way():
@@ -277,7 +277,7 @@ def test_pick_shift_and_end():
         code, text, _ = _main(["petg", "B5"], base, out, b)
         assert code == 0 and "done" in text and "make_stls.py --preset petg" in text and "--tests G" in text
         saved = _saved(base, "petg")
-        assert saved["values"]["dovetail_clearance"] == 0.1 and saved["calibration"]["current"] is None
+        assert saved["values"]["hinge_dovetail_fit"] == 0.1 and saved["calibration"]["current"] is None
 
 
 def test_a_failed_build_keeps_the_answer_and_retries():
@@ -353,7 +353,7 @@ def test_end_to_end_with_real_builds():
         assert _main(["e2e", "A9"], base, out, None)[0] == 0
         assert {"B_03-07.stl", "B_03-07_hinge_rib.stl", "B_03-07.txt"} <= set(os.listdir(d))
         txt = open(os.path.join(d, "B_03-07.txt")).read()
-        assert "hinge_detent = 0" in txt and "hinge_clearance = 0.2" in txt
+        assert "hinge_detent_height = 0" in txt and "hinge_clearance = 0.2" in txt
         assert _saved(base, "e2e")["calibration"]["chosen"] == {"A": 9}
 
 

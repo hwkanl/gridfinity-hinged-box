@@ -13,7 +13,7 @@ from hwkan_gfbox.tests.test_hinge import _sheet, hinge_centers
 
 
 def test_leaf_derived_defaults():
-    s = _sheet(("hinge_clearance", "0.15"), ("dovetail_clearance", "0.09"))  # the values these were worked out for
+    s = _sheet(("hinge_clearance", "0.15"), ("hinge_dovetail_fit", "0.09"))  # the values these were worked out for
     for name, want, tol in (("leaf_w", 9.7, 1e-9), ("leaf_tan", 2.474874, 1e-6),
                             ("leaf_foot", 3.425252, 1e-6), ("dovetail_start", 6.875, 1e-9),
                             ("leaf_len", 16.875, 1e-9), ("leaf_top_angle", 75.077600, 1e-5),
@@ -169,6 +169,6 @@ def test_hinge_ribs_and_slots():
 def test_leaves_sit_in_the_slots_without_overlap():
     # The dovetail's bed face and the leaf's underside lie in the slot's
     # wide-face plane by design (zero gap there, nominally); the flanks and
-    # floor carry dovetail_clearance.
+    # floor carry hinge_dovetail_fit.
     doc = built()
     assert get(doc, "Leaves").Shape.common(get(doc, "Bottom").Shape).Volume < 1e-6

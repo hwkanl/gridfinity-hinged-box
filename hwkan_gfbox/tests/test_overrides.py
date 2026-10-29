@@ -79,13 +79,13 @@ def test_parse_overrides_order_and_rest():
     try:
         path = os.path.join(d, "mine.json")
         with open(path, "w") as f:
-            json.dump({"format": 1, "values": {"lip_clearance": 0.3}}, f)
+            json.dump({"format": 1, "values": {"latch_clearance": 0.3}}, f)
         overrides, preset, rest = parse_overrides(
             ["--set", "gf_x=5", "--part", "lid", "--preset", path, "--set", "lid_chamfer=1.5", "--fine"])
     finally:
         shutil.rmtree(d)
     assert overrides == [("gf_x", "5"), ("lid_chamfer", "1.5")], overrides
-    assert (preset.name, preset.ref, preset.values["lip_clearance"]) == ("mine", path, 0.3)
+    assert (preset.name, preset.ref, preset.values["latch_clearance"]) == ("mine", path, 0.3)
     assert rest == ["--part", "lid", "--fine"], rest
 
 
@@ -97,7 +97,7 @@ def test_parse_overrides_defaults_to_the_default_preset():
 def test_preset_values_cannot_be_set_on_the_command_line():
     for args, fragment in [
         (["--set", "hinge_clearance=0.15"], "hinge_clearance comes from the preset"),
-        (["--set", "hook_preload=0.3"], "hook_preload comes from the preset"),
+        (["--set", "latch_preload=0.3"], "latch_preload comes from the preset"),
         (["--params", "x.json"], "--preset"),
         (["--preset"], "--preset expects"),
         (["--preset", "/nowhere/x.json"], "not found"),
@@ -183,7 +183,7 @@ def test_leaf_rules():
     assert "socket must fit in the leaf knuckle" in _error_of(("leaf_r", "2.6"))  # 2.6 <= 2.5 + 0.2
     assert "sockets meet" in _error_of(("knuckle_gap", "6.4"))  # leaf_w 6.1 <= 2 * 3.063
     assert "dovetail_angle must be between" in _error_of(("dovetail_angle", "90"))
-    assert "leaf body must clear the slot" in _error_of(("dovetail_clearance", "0.4"))  # 0.346 < 0.4
+    assert "leaf body must clear the slot" in _error_of(("hinge_dovetail_fit", "0.4"))  # 0.346 < 0.4
     assert "rib must hold the slot" in _error_of(("hinge_rib_w", "14"))  # < 13.86 + 1.6
     two = (("gf_x", "2"), ("gf_y", "2"))
     assert "hinge ribs must clear the corner pads" in _error_of(*two, ("hinge_rib_w", "34"))  # 21.5 + 17 > 38
@@ -254,6 +254,6 @@ def test_lock_seat_rules():
 
 def test_hinge_clearance_can_go_below_the_old_limit():
     # dovetail_w 10.4: the leaf body clears the slot's opening by
-    # (10.4 - (10 - 2 * hc)) / 2 * sin(60) >= dovetail_clearance for any hc > 0
+    # (10.4 - (10 - 2 * hc)) / 2 * sin(60) >= hinge_dovetail_fit for any hc > 0
     _validate_with(("hinge_clearance", "0.05"))
     _validate_with(("hinge_clearance", "0.12"))

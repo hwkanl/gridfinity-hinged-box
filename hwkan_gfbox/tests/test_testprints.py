@@ -24,7 +24,8 @@ def _small(*extra):
     return _docs[extra]
 
 
-EXPECTED_SOLIDS = {"hinge_lid": 2, "hinge_rib": 1, "leaf": 1, "latch": 3, "lock_pad": 1, "latch_base": 1, "latch_keyless": 3}
+EXPECTED_SOLIDS = {"hinge_lid": 2, "hinge_rib": 1, "leaf": 1, "latch": 3, "lock_pad": 1, "lock_front": 1,
+                   "latch_base": 1, "latch_keyless": 3}
 
 
 def test_pieces_are_sound_and_on_the_bed():
@@ -62,6 +63,23 @@ def test_strips_hold_the_whole_hinge_and_pad():
     assert _covers(get(doc, "Bottom").Shape, rib_strip, near_x("HingeRibs", hc))
     pad_strip = testprints.PIECES["lock_pad"][0](doc)[0]
     assert _covers(get(doc, "Bottom").Shape, pad_strip, near_x("LockPads", lc))
+    front = testprints.PIECES["lock_front"][0](doc)[0]
+    closed = get(doc, "Bottom").Shape.fuse(get(doc, "Lid").Shape)  # lock_front holds both halves
+    assert _covers(closed, front, near_x("LockPads", lc) + near_x("LockLips", lc))
+
+
+def test_lock_front_is_the_pad_strip_and_the_lid_above_it():
+    """One solid: the pad strip's material and the lid's at the lock, the
+    lid's on top (from the parting line up), nothing else."""
+    doc = _small()
+    pad = testprints.PIECES["lock_pad"][0](doc)[0]
+    front = testprints.PIECES["lock_front"][0](doc)[0]
+    lid = get(doc, "Lid").Shape
+    split = v(doc, "split_z")
+    above = front.cut(pad)
+    assert above.Volume > 100 and abs(above.common(lid).Volume - above.Volume) <= 1e-3
+    assert above.optimalBoundingBox(False).ZMin >= split - 1e-6
+    assert front.common(pad).Volume >= pad.Volume - 1e-3
 
 
 def test_print_in_place_pieces_are_free():
@@ -89,13 +107,8 @@ def _same(a, b):
 
 def test_pieces_do_not_depend_on_the_box_size():
     small, default = _small(), built()  # built() is the default 3x2x6 box
-    for name in ("hinge_lid", "latch", "lock_pad"):
+    for name in ("hinge_lid", "latch", "lock_pad", "lock_front"):
         assert _same(testprints.piece(small, name), testprints.piece(default, name)), name
-
-
-def test_label_text():
-    assert testprints.label_text(0.2) == "0.20"
-    assert testprints.label_text(0.15) == "0.15"
 
 
 def test_label_goes_into_the_bed_face():
@@ -124,9 +137,9 @@ def test_label_skipped_without_the_font():
         testprints.FONT = old
 
 
-def test_every_swept_piece_takes_a_label():
+def test_every_value_swept_piece_takes_a_label():
     doc = _small()
-    for name in testprints.SWEEPABLE.values():
+    for name in ("hinge_lid", "leaf", "latch", "latch_base"):
         solids = testprints.piece(doc, name)
         k = testprints.PIECES[name][2]
         labelled, ok = testprints.engrave(solids[k], "0.20")
@@ -139,113 +152,38 @@ def test_every_swept_piece_takes_a_label():
 
 
 
-def test_parse_sweep():
-    assert testprints.parse_sweep("latch_clearance=0.15,0.2, 0.25") == ("latch_clearance", [0.15, 0.2, 0.25])
-    assert testprints.parse_sweep("hinge_clearance=0.2 mm; 0.3mm 0.25") == ("hinge_clearance", [0.2, 0.3, 0.25])
-    for bad in ("wall_t=1,2", "hook_preload=0.1", "latch_clearance=", "latch_clearance",
-                "latch_clearance=0.1,-0.1", "latch_clearance=0.1,0", "latch_clearance=0.1,abc"):
-        try:
-            testprints.parse_sweep(bad)
-        except ParamError:
-            continue
-        raise AssertionError(f"accepted {bad!r}")
-
-
-def test_default_sweep_values():
-    assert testprints.default_sweep_values(0.2) == "0.15, 0.2, 0.25"
-    assert testprints.default_sweep_values(0.04) == "0.02, 0.04, 0.09"
-
-
-# Two valid values per tolerance, small first: hinge_clearance must stay > 0
-# and dovetail_clearance below ~0.35
-SWEEP_VALUES = {"hinge_clearance": (0.2, 0.3), "latch_clearance": (0.15, 0.25),
-                "dovetail_clearance": (0.1, 0.15), "lock_dovetail_clearance": (0.1, 0.2)}
-
-
-def _run(**kw):
+def _run(preset=None):
     out = tempfile.mkdtemp(prefix="tp_")
-    paths, files, warnings = testprints.run(out_dir=out, **kw)
+    paths, files, warnings = testprints.run(preset, out)
     return out, paths, files, warnings
 
 
-def _copies(plate):
-    return plate.SubShapes  # one sub-compound per copy
-
-
-def test_one_set_writes_every_piece():
-    out, paths, files, _ = _run()
-    six = ["hinge_lid", "hinge_rib", "latch", "latch_base", "leaf", "lock_pad"]
-    assert sorted(os.path.basename(p) for p in paths) == sorted(f"{n}.stl" for n in six)
-    assert "latch_keyless" in testprints.PIECES and "latch_keyless" not in testprints.BASIC_SET
+def test_a_preset_writes_the_four_parts():
+    from hwkan_gfbox import presets
+    preset = presets.Preset("tp_test", "tp_test", dict(presets.load(presets.DEFAULT).values, hinge_clearance=0.3))
+    out, paths, files, _ = _run(preset)
+    assert sorted(os.path.basename(p) for p in paths) == sorted(f"{n}.stl" for n in testprints.TEST_SET)
+    assert testprints.TEST_SET == ("hinge_lid", "hinge_rib", "latch", "lock_front")
     assert all(os.path.getsize(p) > 1000 for p in paths)
+    for p in paths:  # on the bed as the slicer sees it
+        assert near(Mesh.Mesh(p).BoundBox.ZMin, 0, 1e-6), p
     info = json.load(open(os.path.join(out, "build_info.json")))
-    assert info["parameters"]["gf_x"] == 2 and "sweep" not in info
+    assert info["parameters"]["gf_x"] == 2 and near(info["parameters"]["hinge_clearance"], 0.3)
+    assert info["preset"] == "tp_test", info["preset"]
+    default = testprints.piece(_small(), "hinge_lid")
+    assert _same(files["hinge_lid.stl"].Solids, testprints.piece(_small(("hinge_clearance", "0.3")), "hinge_lid"))
+    assert not _same(files["hinge_lid.stl"].Solids, default)  # the preset's value reached the piece
     assert not any(d.startswith(testprints.DOC_PREFIX) for d in App.listDocuments())
 
 
-def test_sweeps_repeat_the_right_piece():
-    for tol, name in testprints.SWEEPABLE.items():
-        lo, hi = SWEEP_VALUES[tol]
-        values = [hi, lo]  # unsorted on purpose
-        out, paths, files, warnings = _run(sweep=(tol, values))
-        main = files[f"{name}_{tol}_sweep.stl"]
-        copies = _copies(main)
-        assert len(copies) == 2, tol
-        n = len(testprints.piece(_small(), name))
-        assert all(len(c.Solids) == n for c in copies), tol
-        assert not [w for w in warnings if "no label" in w], warnings
-        boxes = [c.optimalBoundingBox(False) for c in copies]  # run() meshed them: not the mesh's box
-        assert boxes[0].XMax + testprints.ROW_GAP - 1e-6 <= boxes[1].XMin, tol  # in a row, apart
-        stl = Mesh.Mesh(os.path.join(out, f"{name}_{tol}_sweep.stl"))  # on the bed as the slicer sees it
-        assert near(stl.BoundBox.ZMin, 0, 1e-6), (tol, stl.BoundBox.ZMin)
-        slot = testprints.SLOT_PIECE.get(tol)
-        if slot:
-            plate = files[f"{slot}_{tol}_sweep.stl"]
-            assert _same(plate.Solids, testprints.piece(_small((tol, f"{hi:g}")), slot)), tol
-        else:
-            assert len(files) == 1, tol
-        info = json.load(open(os.path.join(out, f"build_info_{tol}_sweep.json")))
-        assert info["sweep"] == {"name": tol, "values": values}, tol
-
-
-def test_swept_value_reaches_the_piece():
-    """More clearance, less material (unlabelled pieces)."""
-    for tol, name in testprints.SWEEPABLE.items():
-        a, b = SWEEP_VALUES[tol]
-        lo = sum(s.Volume for s in testprints.piece(_small((tol, f"{a:g}")), name))
-        hi = sum(s.Volume for s in testprints.piece(_small((tol, f"{b:g}")), name))
-        assert hi < lo - 1e-3, (tol, lo, hi)
-
-
-def test_another_box_size_still_gives_the_test_prints():
-    _, paths, _, _ = _run(overrides=[("gf_x", "5"), ("gf_y", "3"), ("hinge_count", "3"), ("lock_count", "3")],
-                          sweep=("latch_clearance", [0.2]))
-    assert len(paths) == 1
-
-
-def test_a_bad_sweep_value_is_named_before_building():
-    import time
-    t = time.time()
+def test_gui_preset_is_the_open_box_s_or_the_default():
+    from hwkan_gfbox import presets
+    doc = params_document([("gf_x", "4")])[0]
     try:
-        _run(sweep=("hinge_clearance", [0.2, 1.5]))
-    except ParamError as e:
-        assert "hinge_clearance = 1.5" in str(e), str(e)
-    else:
-        raise AssertionError("hinge_clearance 1.5 was accepted")
-    assert time.time() - t < 3, "validated only after building"
-    assert not any(d.startswith(testprints.DOC_PREFIX) for d in App.listDocuments())
-
-
-def test_gui_inputs_leave_the_document_open():
-    doc = params_document([("gf_x", "4"), ("latch_clearance", "0.3")])[0]
-    try:
-        overrides, current = testprints.gui_inputs()
-        assert ("gf_x", "4") in overrides and near(current["latch_clearance"], 0.3)
-        assert DOC_NAME in App.listDocuments()
+        assert testprints.gui_preset() == presets.DEFAULT  # the default box's preset
     finally:
         App.closeDocument(doc.Name)
-    overrides, current = testprints.gui_inputs()
-    assert overrides == [] and near(current["hinge_clearance"], 0.2)
+    assert testprints.gui_preset() == presets.DEFAULT
 
 
 def test_every_digit_can_be_labelled():
@@ -265,7 +203,7 @@ def test_bed_labels_are_mirrored():
     assert mass_x(box.cut(testprints.engrave(box, "1.")[0])) > 0
 
 
-WALL_STRIPS = ("hinge_lid", "hinge_rib", "lock_pad")
+WALL_STRIPS = ("hinge_lid", "hinge_rib", "lock_pad", "lock_front")
 CALIBRATION_PIECES = ("hinge_lid", "leaf", "hinge_rib", "latch", "latch_base", "lock_pad", "latch_keyless")
 
 
@@ -283,9 +221,9 @@ def test_wall_strips_have_a_label_tab():
 
 def test_every_labelled_piece_has_room_on_its_bed():
     """Calibration labels (three characters) on every piece a calibration
-    test sweeps, --sweep's value labels on every --sweep piece."""
+    test sweeps."""
     doc = _small()
-    cases = [(n, "C13") for n in CALIBRATION_PIECES] + [(n, "0.125") for n in testprints.SWEEPABLE.values()]
+    cases = [(n, "C13") for n in CALIBRATION_PIECES]
     for name, text in cases:
         solids = testprints.piece(doc, name)
         k = testprints.PIECES[name][2]
@@ -303,25 +241,9 @@ def test_pieces_lie_on_the_bed_after_the_box_was_meshed():
     doc = _small()
     for label in ("Lid", "Bottom"):
         MeshPart.meshFromShape(Shape=get(doc, label).Shape, LinearDeflection=0.3, AngularDeflection=0.5)
-    for name in ("hinge_lid", "hinge_rib", "lock_pad"):
+    for name in ("hinge_lid", "hinge_rib", "lock_pad", "lock_front"):
         zmin = Part.makeCompound(testprints.piece(doc, name)).optimalBoundingBox(False).ZMin
         assert near(zmin, 0, 1e-6), (name, zmin)
-
-
-def test_labels_keep_every_decimal():
-    assert [testprints.label_text(x) for x in (0.1, 0.2, 0.15, 0.125, 0.075)] == \
-        ["0.10", "0.20", "0.15", "0.125", "0.075"]
-
-
-def test_dialog_suggests_only_valid_values():
-    """At default values a centered window would start below hinge_clearance's
-    and end above dovetail_clearance's limit: the suggestion moves away."""
-    overrides, current = testprints.gui_inputs()
-    for tol in testprints.SWEEPABLE:
-        text = testprints.default_sweep_values(current[tol], lambda x: testprints.valid_value(overrides, tol, x))
-        _, values = testprints.parse_sweep(f"{tol}={text}")
-        assert len(values) == 3 and current[tol] in values, (tol, text)
-        assert all(testprints.valid_value(overrides, tol, x) for x in values), (tol, text)
 
 
 def test_keyless_latch_slides_past_the_nub():
@@ -349,7 +271,7 @@ def test_keyless_latch_slides_past_the_nub():
 
 def test_detents_reach_their_slot_strips():
     """A bigger detent, a bigger nub: more material in the slot strip."""
-    for name, param in (("hinge_rib", "hinge_detent"), ("lock_pad", "lock_detent")):
+    for name, param in (("hinge_rib", "hinge_detent_height"), ("lock_pad", "latch_detent_height")):
         lo = testprints.piece(_small((param, "0.1")), name)[0].Volume
         hi = testprints.piece(_small((param, "0.4")), name)[0].Volume
         assert hi > lo + 1e-3, (name, lo, hi)
@@ -358,14 +280,31 @@ def test_detents_reach_their_slot_strips():
 def test_write_sweep_labels_and_partner():
     out = tempfile.mkdtemp(prefix="tp_ws_")
     paths, files, info, warnings = testprints.write_sweep(
-        "hinge_detent", [0.4, 0.5], ["C9", "C11"], "hinge_rib", out, "C_09-11.stl",
+        "hinge_detent_height", [0.4, 0.5], ["C9", "C11"], "hinge_rib", out, "C_09-11.stl",
         partner="leaf", partner_file="C_leaf.stl")
     assert sorted(os.path.basename(p) for p in paths) == ["C_09-11.stl", "C_leaf.stl"]
     assert len(_copies(files["C_09-11.stl"])) == 2 and not warnings
-    assert near(info["parameters"]["hinge_detent"], 0.5)
-    assert _same(files["C_leaf.stl"].Solids, testprints.piece(_small(("hinge_detent", "0.5")), "leaf"))
-    unlabelled = testprints.piece(_small(("hinge_detent", "0.4")), "hinge_rib")[0]
+    assert near(info["parameters"]["hinge_detent_height"], 0.5)
+    assert _same(files["C_leaf.stl"].Solids, testprints.piece(_small(("hinge_detent_height", "0.5")), "leaf"))
+    unlabelled = testprints.piece(_small(("hinge_detent_height", "0.4")), "hinge_rib")[0]
     assert _copies(files["C_09-11.stl"])[0].Volume < unlabelled.Volume - 0.3  # engraved
+
+
+def _copies(plate):
+    return plate.SubShapes  # one sub-compound per copy
+
+
+def test_a_bad_sweep_value_is_named_before_building():
+    import time
+    t = time.time()
+    try:
+        testprints.write_sweep("hinge_clearance", [0.2, 1.5], ["A1", "A2"], "hinge_lid", tempfile.mkdtemp(), "x.stl")
+    except ParamError as e:
+        assert "hinge_clearance = 1.5" in str(e), str(e)
+    else:
+        raise AssertionError("hinge_clearance 1.5 was accepted")
+    assert time.time() - t < 3, "validated only after building"
+    assert not any(d.startswith(testprints.DOC_PREFIX) for d in App.listDocuments())
 
 
 def test_write_sweep_needs_a_label_per_value():

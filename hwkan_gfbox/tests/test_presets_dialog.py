@@ -51,8 +51,8 @@ def test_save_checked_validates_then_saves():
     try:
         presets.new("pla", base=base)
         p = presets.load("pla", base)
-        _raises(lambda: pd.save_checked(pd.edited(p, {"feet_xy_clearance": "0.9"}), base), "feet_xy_clearance")
-        assert presets.load("pla", base).values["feet_xy_clearance"] != 0.9  # not saved
+        _raises(lambda: pd.save_checked(pd.edited(p, {"hinge_clearance": "1.5"}), base), "hinge_clearance")
+        assert presets.load("pla", base).values["hinge_clearance"] != 1.5  # not saved
         pd.save_checked(pd.edited(p, {"hinge_clearance": "0.12"}), base)
         assert presets.load("pla", base).values["hinge_clearance"] == 0.12
     finally:

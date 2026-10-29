@@ -195,12 +195,12 @@ def test_lid_opens_without_touching_the_bottom():
 
 
 def test_detent_nub_holds_the_leaf_down():
-    """A nub above each slot, hinge_detent out of the slot's wide face, sits in
-    the leaf's notch: seated nothing touches; lifted past nub_clearance,
+    """A nub above each slot, hinge_detent_height out of the slot's wide face, sits in
+    the leaf's notch: seated nothing touches; lifted past hinge_detent_clearance,
     the notch's lower edge runs into the nub's flat underside."""
     doc = built()
     c, sy = v(doc, "hinge_c0"), v(doc, "rim_d") / 2 + v(doc, "leaf_face_gap")
-    bot, top, d = v(doc, "hinge_nub_bot"), v(doc, "hinge_nub_top"), v(doc, "hinge_detent")
+    bot, top, d = v(doc, "hinge_nub_bot"), v(doc, "hinge_nub_top"), v(doc, "hinge_detent_height")
     mid = (bot + top) / 2
     assert inside(doc, "Bottom", c, sy + d - 0.05, mid) and not inside(doc, "Bottom", c, sy + d + 0.05, mid)
     assert not inside(doc, "Bottom", c, sy + 0.05, bot - 0.05)  # flat underside
@@ -214,6 +214,6 @@ def test_detent_nub_holds_the_leaf_down():
         moved = leaves.copy()
         moved.translate(App.Vector(0, 0, dz))
         return moved.common(bottom).Volume
-    nc = v(doc, "nub_clearance")
+    nc = v(doc, "hinge_detent_clearance")
     assert lifted(0) <= 1e-9 and lifted(nc - 0.01) <= 1e-9
     assert lifted(nc + 0.05) > 1e-3

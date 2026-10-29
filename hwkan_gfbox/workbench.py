@@ -128,7 +128,8 @@ COMMAND_TABLE = [
     ("HwkanGfbox_Calibrate", "calibrate", "Calibrate",
      "Guided test-print sweeps that fill a preset with your printer's tolerances", _calibrate, _no_dialog),
     ("HwkanGfbox_TestPrints", "test_prints", "Test prints",
-     "Hinge and lock test pieces, one set or a sweep of one tolerance", _test_prints, _no_dialog),
+     "Four small parts that test a preset: the hinge, its dovetail slot, the latch and its pad with the lid's lip",
+     _test_prints, _no_dialog),
 ]
 COMMANDS = [c[0] for c in COMMAND_TABLE]
 

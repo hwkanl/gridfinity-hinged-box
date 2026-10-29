@@ -67,7 +67,7 @@ def test_a_box_saved_under_another_name_is_the_open_box_when_active():
     box = built(("gf_x", "2"), ("gf_y", "2"), ("gf_z_units", "3"))
     App.setActiveDocument(box.Name)
     assert box_document() is box
-    assert any(n == "gf_x" for n, _ in testprints.gui_inputs()[0])
+    assert testprints.gui_preset() == "default"
     params_document(doc_name="not_a_box")  # active, but no parts: not a box
     try:
         assert box_document() is None

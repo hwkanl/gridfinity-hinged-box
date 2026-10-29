@@ -156,7 +156,7 @@ def build_lock_slots(doc):
     place(slot, C, Y("Internal.slot_in_u"), Z(low))
     # the key: full depth only up to lock_key_h above pad_bot (plus the roof's clearance)
     key = _key_cut(doc, "LockSlotKey", "Internal.slot_in_u",
-                   "Internal.pad_bot + Internal.lock_key_h + Preset.lock_dovetail_clearance",
+                   "Internal.pad_bot + Internal.lock_key_h + Preset.latch_dovetail_fit",
                    "Internal.lock_slot_base_w / 2 + Internal.overlap")
     return _per_lock(doc, cut(doc, "LockSlot", cut(doc, "LockSlotKeyed", slot, key), _detent_nub(doc)), "LockSlots")
 
@@ -209,26 +209,26 @@ def _axle_up(doc, label, u, z, hw):
 
 def build_latch_bases(doc):
     """LatchBases: the dovetail tongue (the slot moved in by
-    lock_dovetail_clearance: narrow face = the base's full width, flush with
+    latch_dovetail_fit: narrow face = the base's full width, flush with
     the pad's front face), from pad_bot up to latch_top, plus the body around
     P0 (from `overlap` inside the tongue out to P0, latch_top down to the
     lobe's bottom, and the lobe), with the teardrop hole for the lever's axle
     at P0. The base prints upside down on latch_top, so the hole points -z."""
     hw = "Internal.latch_base_hw"
-    t = "(Internal.dovetail_t - Preset.lock_dovetail_clearance)"
+    t = "(Internal.dovetail_t - Preset.latch_dovetail_fit)"
     wide = f"(Internal.latch_base_hw + {t} / tan(Internal.dovetail_angle))"
     height = "Internal.latch_top - Internal.pad_bot"
     tongue = primitive(doc, "Part::Wedge", "LatchTongue", {
         "Xmin": f"-{wide}", "Xmax": wide, "X2min": f"-{hw}", "X2max": hw,
         "Ymin": "0 mm", "Ymax": t, "Zmin": "0 mm", "Zmax": height, "Z2min": "0 mm", "Z2max": height,
     }, App.Rotation(App.Vector(0, 0, 1), 180))
-    place(tongue, C, Y("Internal.slot_in_u + Preset.lock_dovetail_clearance"), Z("Internal.pad_bot"))
+    place(tongue, C, Y("Internal.slot_in_u + Preset.latch_dovetail_fit"), Z("Internal.pad_bot"))
     block = _box(doc, "LatchBaseBlock", "Internal.pad_front - Internal.overlap", P0[0],
                  f"{P0[1]} - Internal.lobe_r", "Internal.latch_top", hw)
     lobe = _cylinder(doc, "LatchBaseLobe", *P0, "Internal.lobe_r", hw)
     solid = fuse(doc, "LatchBaseSolid", [tongue, block, lobe])
     # the key: the tongue has its full depth only in its lowest lock_key_h
-    key = _key_cut(doc, "LatchBaseKey", "Internal.slot_in_u + Preset.lock_dovetail_clearance",
+    key = _key_cut(doc, "LatchBaseKey", "Internal.slot_in_u + Preset.latch_dovetail_fit",
                    "Internal.pad_bot + Internal.lock_key_h", f"{wide} + Internal.overlap")
     keyed = cut(doc, "LatchBaseKeyed", solid, key)
     unit = cut(doc, "LatchBase", keyed, _teardrop(doc, "LatchBaseHole", *P0, f"{hw} + Internal.overlap"))

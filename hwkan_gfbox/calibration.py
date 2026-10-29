@@ -36,18 +36,18 @@ class Test:
 TESTS = {t.letter: t for t in (
     Test("A", "hinge_clearance", 0.025, "hinge_lid", None, (), "stuck", "sloppy", True,
          "Break each leaf free and swing it: pick the smallest number that swings freely."),
-    Test("B", "dovetail_clearance", 0.025, "leaf", "hinge_rib", (("hinge_detent", "0"),), "tight", "loose", True,
+    Test("B", "hinge_dovetail_fit", 0.025, "leaf", "hinge_rib", (("hinge_detent_height", "0"),), "tight", "loose", True,
          "Slide each leaf into the rib's slot: pick the one that slides in without force and without play."),
-    Test("C", "hinge_detent", 0.05, "hinge_rib", "leaf", (), "hard", "weak", False,
+    Test("C", "hinge_detent_height", 0.05, "hinge_rib", "leaf", (), "hard", "weak", False,
          "Push the leaf into each rib: pick the one that snaps in firmly and still goes in by hand."),
     Test("D", "latch_clearance", 0.025, "latch", None, (), "stuck", "sloppy", True,
          "Work each latch: pick the smallest number whose lever and hook move freely."),
-    Test("E", "lock_dovetail_clearance", 0.025, "latch_base", "lock_pad", (("lock_detent", "0"),), "tight",
+    Test("E", "latch_dovetail_fit", 0.025, "latch_base", "lock_pad", (("latch_detent_height", "0"),), "tight",
          "loose", True,
          "Slide each base up into the pad's slot: pick the one that slides without force and without play."),
-    Test("F", "lock_detent", 0.05, "lock_pad", "latch_base", (), "hard", "weak", False,
+    Test("F", "latch_detent_height", 0.05, "lock_pad", "latch_base", (), "hard", "weak", False,
          "Push the base into each pad: pick the one that clicks in firmly and still goes in by hand."),
-    Test("G", "hook_preload", 0.05, "latch_keyless", None, (), "hard", "weak", False,
+    Test("G", "latch_preload", 0.05, "latch_keyless", None, (), "hard", "weak", False,
          "These latches are fitted to a box printed with this preset: fit each to it and close it, "
          "and pick the one that holds the lid tight and still closes by hand."),
 )}
@@ -389,5 +389,5 @@ def finished_text(preset, gui=False):
     lines += [f"  {TESTS[t].param} = {preset.values[TESTS[t].param]:g} mm ({t}{n})" for t, n in s["chosen"].items()]
     lines.append("print a box with it: " + hint["box"].format(ref=preset.ref))
     if "G" not in s["tests"]:
-        lines.append("then, to tune hook_preload on that box: " + hint["g"].format(ref=preset.ref))
+        lines.append("then, to tune latch_preload on that box: " + hint["g"].format(ref=preset.ref))
     return "\n".join(lines)

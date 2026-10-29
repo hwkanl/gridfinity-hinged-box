@@ -7,8 +7,8 @@ def build_feet(doc):
     """Feet array. Each foot's bottom is at split_z (= ceiling_z - base_h);
     its top extends `overlap` into the ceiling."""
     foot = profile_loft(doc, "FootCell",
-                        "Internal.base_top - 2 * Preset.feet_xy_clearance",
-                        "Internal.base_top_r - Preset.feet_xy_clearance",
+                        "Internal.base_top - 2 * Internal.feet_xy_clearance",
+                        "Internal.base_top_r - Internal.feet_xy_clearance",
                         FIRST_CELL_X, FIRST_CELL_Y, [
                             ("Internal.split_z", "Internal.base_ch_high + Internal.base_ch_low"),
                             ("Internal.split_z + Internal.base_ch_low", "Internal.base_ch_high"),

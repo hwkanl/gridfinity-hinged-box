@@ -27,8 +27,13 @@ USER_SHEET = "Params"
 PRESET_SHEET = "Preset"  # the preset's values the box was built with; written by every build
 INTERNAL_SHEET = "Internal"
 
-# What a preset holds (hwkan_gfbox.presets): the printer- and material-dependent values.
+# What a preset holds (hwkan_gfbox.presets): the printer- and material-dependent
+# values, the ones the test prints check.
 PRESET_TIERS = (TOLERANCE, FIT)
+# Gaps that are design values (no preset holds them), still validated >= 0 and
+# swept by verify.py. All but bin_clearance were preset values until 2026-10-29.
+DESIGN_GAPS = ("feet_xy_clearance", "feet_z_clearance", "lip_clearance", "bin_clearance", "stack_clearance",
+               "hinge_detent_clearance", "latch_seat_clearance")
 DEFAULT_PRESET = "default"  # the built-in preset: the defaults below
 
 
@@ -45,20 +50,39 @@ PARAMS = [
     ("hinge_count", "2", INPUT, "number of hinges along the back wall (2 to gf_x, as many as fit)"),
     ("lock_count", "2", INPUT, "number of locks along the front wall (1 to gf_x, as many as fit)"),
 
-    ("feet_xy_clearance", "0.25 mm", TOLERANCE, "lid feet shrunk by this per side vs a standard bin base"),
-    ("feet_z_clearance", "0.5 mm", TOLERANCE, "lid feet raised by this above a seated bin base; the lid never presses on the bins"),
-    ("lip_clearance", "0.2 mm", TOLERANCE, "gap between the rim's round bead (bottom) and its channel (lid), normal to the arc"),
-    ("hinge_clearance", "0.2 mm", TOLERANCE, "print-in-place gap between the free leaf and the lid knuckles, pins and lid face"),
-    ("dovetail_clearance", "0.1 mm", TOLERANCE, "gap between the leaf's dovetail sides and its slot's, normal to the sides (the slot's floor stays nominal)"),
-    ("nub_clearance", "0.15 mm", TOLERANCE, "gap between the seated leaf's notch edge and the hinge nub's flat underside: how far the snapped leaf can lift"),
-    ("latch_clearance", "0.25 mm", TOLERANCE, "print-in-place gap between the latch's base, lever and hook, and around their axles"),
-    ("lock_dovetail_clearance", "0.1 mm", TOLERANCE, "gap between the latch base's dovetail and the pad's slot (sides, normal to the face, and the slot's roof)"),
+    # The preset: what the four test prints check, the hinge's values, then the
+    # latch's. Each comment is written for the user (the Presets dialog shows
+    # it); the geometry is in the # notes.
+    # hinge_clearance: print-in-place gap between the free leaf and the lid
+    # knuckles, pins and lid face.
+    ("hinge_clearance", "0.2 mm", TOLERANCE, "Play in the hinge, which prints in one piece with the lid. Smaller: a firmer hinge with less wobble, but the print-in-place parts may fuse. Larger: turns freely, with more wobble."),
+    # hinge_dovetail_fit: gap between the leaf's dovetail sides and its slot's,
+    # normal to the sides (the slot's floor stays nominal).
+    ("hinge_dovetail_fit", "0.1 mm", TOLERANCE, "How snugly the hinge leaf slides into its slot on the box's back. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may rattle."),
+    # hinge_detent_height: the nub above each hinge slot stands this far out of
+    # the slot's wide face into the leaf's notch, over which the leaf's
+    # dovetail flexes on the way in.
+    ("hinge_detent_height", "0.6 mm", FIT, "How firmly the hinge leaf clicks into its slot. Larger: a firmer click, harder to push in and pull out. 0: no click."),
+    # latch_clearance: print-in-place gap between the latch's base, lever and
+    # hook, and around their axles.
+    ("latch_clearance", "0.25 mm", TOLERANCE, "Play in the latch, whose base, lever and hook print in one piece. Smaller: less wobble, but the print-in-place parts may fuse. Larger: moves freely, with more wobble."),
+    # latch_dovetail_fit: gap between the latch base's dovetail and the pad's
+    # slot (sides, normal to the face, and the slot's roof).
+    ("latch_dovetail_fit", "0.1 mm", TOLERANCE, "How snugly the latch slides into its slot on the box's front. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may wiggle."),
+    # latch_detent_height: the nub below the seated latch base stands this far
+    # into its dovetail's full-depth part (0 = the nub just touches).
+    ("latch_detent_height", "0.4 mm", FIT, "How firmly the latch clicks into its slot. Larger: a firmer click, harder to push in and pull out. 0: no click."),
+    # latch_preload: the hook is this much shorter than at zero pressure.
+    ("latch_preload", "0.2 mm", FIT, "How hard the closed latch pulls the lid down. Larger: a tighter lid and a firmer snap, but harder to close. Smaller: easier to close, the lid may rattle. 0: no pull."),
+
+    # Gaps that don't depend much on the printer (DESIGN_GAPS): not in presets.
+    ("feet_xy_clearance", "0.25 mm", DESIGN, "lid feet shrunk by this per side vs a standard bin base"),
+    ("feet_z_clearance", "0.5 mm", DESIGN, "lid feet raised by this above a seated bin base; the lid never presses on the bins"),
+    ("lip_clearance", "0.2 mm", DESIGN, "gap between the rim's round bead (bottom) and its channel (lid), normal to the arc"),
     ("bin_clearance", "1 mm", DESIGN, "extra gap between the grid of bins and the cavity walls, all around, so the closing lid's walls clear the bins (more than ~0.51 needed at the hinge wall)"),
-    ("lock_seat_clearance", "0.25 mm", TOLERANCE, "gap around the hook bar in the lip's seat: the seat's curve is this much wider than the bar's round underside"),
-    ("stack_clearance", "0.2 mm", TOLERANCE, "gap between a lid's stacking notches and the grooves under the box stacked on it, normal to their faces (and at their ends); at most about 0.28 at default sizes (the grooves stay in the wall)"),
-    ("hook_preload", "0.2 mm", FIT, "the hook is this much shorter than at zero pressure: the latch's pull on the lid"),
-    ("lock_detent", "0.4 mm", FIT, "the nub below the seated latch base stands this far into its dovetail's full-depth part: the snap the base clicks over (0 = no snap, the nub just touches)"),
-    ("hinge_detent", "0.6 mm", FIT, "the nub above each hinge slot stands this far out of the slot's wide face into the leaf's notch: the snap the leaf's dovetail flexes over on the way in (0 = no snap)"),
+    ("stack_clearance", "0.2 mm", DESIGN, "gap between a lid's stacking notches and the grooves under the box stacked on it, normal to their faces (and at their ends); at most about 0.28 at default sizes (the grooves stay in the wall)"),
+    ("hinge_detent_clearance", "0.15 mm", DESIGN, "gap between the seated leaf's notch edge and the hinge nub's flat underside: how far the clicked-in leaf can lift"),
+    ("latch_seat_clearance", "0.25 mm", DESIGN, "gap around the hook bar in the lid lip's seat: the seat's curve is this much wider than the bar's round underside"),
 
     ("wall_t", "3 mm", DESIGN, "side wall thickness"),
     ("floor_t", "3 mm", DESIGN, "floor skin under the baseplate pockets"),
@@ -186,13 +210,13 @@ PARAMS = [
     ("leaf_top_angle", "=atan2(dovetail_t - hinge_axis_z; leaf_len) + acos(leaf_r / sqrt(leaf_len ^ 2 + (dovetail_t - hinge_axis_z) ^ 2))", DERIVED, "direction (from +out toward +z) of the point where the leaf's top line touches its knuckle arc"),
     ("socket_depth", "=pin_apex + hinge_clearance / cos(pin_angle) - hinge_clearance", DERIVED, "sharp socket cone's apex distance from the leaf's end face (flank hinge_clearance from the pin's)"),
     ("dovetail_base_w", "=dovetail_w + 2 * dovetail_t / tan(dovetail_angle)", DERIVED, "dovetail width at its wide (bed) face, nominal"),
-    ("dovetail_side_in", "=dovetail_clearance / sin(dovetail_angle)", DERIVED, "each dovetail side is moved in by this, horizontally (dovetail_clearance normal to the side)"),
+    ("dovetail_side_in", "=hinge_dovetail_fit / sin(dovetail_angle)", DERIVED, "each dovetail side is moved in by this, horizontally (hinge_dovetail_fit normal to the side)"),
     ("leaf_face_gap", "=hinge_axis_out - hinge_axis_z", DERIVED, "gap between the swung-down leaf's underside and the lid's back face; the slot's wide face is in that plane"),
     ("rib_top", "=split_z - dovetail_drop", DERIVED, "top of the hinge ribs"),
     ("slot_floor", "=rib_top - dovetail_len", DERIVED, "floor of the dovetail slots: nominal, at the seated leaf's end (the hinge, not the floor, sets the leaf's height)"),
     ("hinge_nub_bot", "=rib_top + hinge_nub_lift", DERIVED, "the hinge nub's flat underside (the ledge), z"),
     ("hinge_nub_top", "=hinge_nub_bot + hinge_nub_h", DERIVED, "the hinge nub's top, z"),
-    ("leaf_notch_bot", "=hinge_nub_bot - nub_clearance", DERIVED, "the seated leaf's notch: its lower edge (the one that catches on the ledge), z"),
+    ("leaf_notch_bot", "=hinge_nub_bot - hinge_detent_clearance", DERIVED, "the seated leaf's notch: its lower edge (the one that catches on the ledge), z"),
     ("rib_depth", "=rim_d / 2 + leaf_face_gap + dovetail_t - outer_d / 2", DERIVED, "how far the hinge ribs stand out of the back wall"),
     ("rib_full", "=slot_floor - rib_flare_below", DERIVED, "the hinge ribs have their full depth from here up to rib_top"),
 
@@ -200,16 +224,16 @@ PARAMS = [
     ("lock_c0", "=-grid_w / 2 + lock_pitch / 2", DERIVED, "X of the first lock's center"),
     ("lever_in", "=latch_base_hw + latch_clearance", DERIVED, "lever plates: inner half width"),
     ("pad_front", "=slot_in_u + dovetail_t", DERIVED, "the pad's front face (and the slot's narrow face), u"),
-    ("lock_dovetail_side_in", "=lock_dovetail_clearance / sin(dovetail_angle)", DERIVED, "the base's dovetail sides are moved in by this, horizontally"),
+    ("lock_dovetail_side_in", "=latch_dovetail_fit / sin(dovetail_angle)", DERIVED, "the base's dovetail sides are moved in by this, horizontally"),
     ("lock_slot_w", "=2 * (latch_base_hw + lock_dovetail_side_in)", DERIVED, "the slot's narrow width: the base's tongue is the base's full width"),
     ("lock_slot_base_w", "=lock_slot_w + 2 * dovetail_t / tan(dovetail_angle)", DERIVED, "the slot's wide width"),
     ("pad_hw", "=lock_slot_base_w / 2 + pad_margin", DERIVED, "half width of the lock pad"),
     ("lever_out", "=max(lever_in + plate_t; pad_hw)", DERIVED, "lever plates: outer half width — at least plate_t, and out to the pad's sides so the hook arms (clear of the pad) have no more side play on the lever than latch_clearance"),
     ("hook_in", "=lever_out + latch_clearance", DERIVED, "hook arms: inner half width — clear of the lever plates and of the pad"),
     ("latch_w", "=2 * (hook_in + plate_t)", DERIVED, "total latch width (outside of the hook arms)"),
-    ("lock_nub_h", "=lock_dovetail_clearance + lock_detent", DERIVED, "how far the detent nub stands out of the slot's wide face"),
-    ("lock_nub_top", "=pad_bot - lock_dovetail_clearance", DERIVED, "the detent nub's flat top (the ledge under the seated base), z"),
-    ("lock_slot_top", "=latch_top + lock_dovetail_clearance", DERIVED, "the slot's closed top (roof), z"),
+    ("lock_nub_h", "=latch_dovetail_fit + latch_detent_height", DERIVED, "how far the detent nub stands out of the slot's wide face"),
+    ("lock_nub_top", "=pad_bot - latch_dovetail_fit", DERIVED, "the detent nub's flat top (the ledge under the seated base), z"),
+    ("lock_slot_top", "=latch_top + latch_dovetail_fit", DERIVED, "the slot's closed top (roof), z"),
     ("lock_w", "=max(latch_w; max(2 * pad_hw; lock_lip_w))", DERIVED, "the lock's footprint along X"),
     ("lock_p0_u", "=pad_front + latch_clearance + lobe_r", DERIVED, "P0, the lever's pivot: u"),
     ("lock_p0_z", "=latch_top - lobe_r", DERIVED, "P0: z"),
@@ -219,12 +243,12 @@ PARAMS = [
     ("lock_p1_u", "=lock_p0_u + pivot_dist * cos(lock_p1_angle)", DERIVED, "P1, the hook's pivot: u"),
     ("lock_p1_z", "=lock_p0_z + pivot_dist * sin(lock_p1_angle)", DERIVED, "P1: z"),
     ("hook_angle", "=atan2(lock_bar_c_z - lock_p1_z; lock_k_u - lock_p1_u)", DERIVED, "direction P1 -> the bar"),
-    ("lock_seat_r", "=bar_r + lock_seat_clearance", DERIVED, "radius of the seat's curve in the lip"),
-    ("lock_seat_u", "=lock_k_u + lock_seat_clearance * cos(hook_angle)", DERIVED, "the seat curve's center, lock_seat_clearance from the unloaded bar's center away from P1 (so the bar meets it where the hook pulls): u"),
-    ("lock_seat_z", "=lock_bar_c_z + lock_seat_clearance * sin(hook_angle)", DERIVED, "the seat curve's center: z"),
+    ("lock_seat_r", "=bar_r + latch_seat_clearance", DERIVED, "radius of the seat's curve in the lip"),
+    ("lock_seat_u", "=lock_k_u + latch_seat_clearance * cos(hook_angle)", DERIVED, "the seat curve's center, latch_seat_clearance from the unloaded bar's center away from P1 (so the bar meets it where the hook pulls): u"),
+    ("lock_seat_z", "=lock_bar_c_z + latch_seat_clearance * sin(hook_angle)", DERIVED, "the seat curve's center: z"),
     ("lock_stop_top", "=lock_bar_c_z + lock_stop_rise", DERIVED, "top of the stop along the lip's front edge: z (the lip's full height there)"),
-    ("bar_h_u", "=lock_k_u - hook_preload * cos(hook_angle)", DERIVED, "the bar as built (hook_preload short of the channel's center): u"),
-    ("bar_h_z", "=lock_bar_c_z - hook_preload * sin(hook_angle)", DERIVED, "the bar as built: z"),
+    ("bar_h_u", "=lock_k_u - latch_preload * cos(hook_angle)", DERIVED, "the bar as built (latch_preload short of the channel's center): u"),
+    ("bar_h_z", "=lock_bar_c_z - latch_preload * sin(hook_angle)", DERIVED, "the bar as built: z"),
     ("hook_l", "=sqrt((bar_h_u - lock_p1_u) ^ 2 + (bar_h_z - lock_p1_z) ^ 2)", DERIVED, "P1 to the bar's center"),
     ("hook_nl", "=hook_angle + 90 deg - asin((lobe_r - bar_r) / hook_l)", DERIVED, "outward normal of the hook arm's wall-side edge (tangent to the lobe and the bar)"),
     ("hook_q_u", "=bar_h_u + bar_r", DERIVED, "Q, the bar's top corner on the +u side: u"),

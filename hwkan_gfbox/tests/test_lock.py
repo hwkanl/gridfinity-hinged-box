@@ -17,7 +17,7 @@ from hwkan_gfbox.verify import gap, latch_fit_checks
 
 
 def test_lock_derived_defaults():
-    s = _sheet(("latch_clearance", "0.2"), ("lock_detent", "0.35"))  # the values these were worked out for
+    s = _sheet(("latch_clearance", "0.2"), ("latch_detent_height", "0.35"))  # the values these were worked out for
     for name, want, tol in (
             ("latch_base_hw", 4.6, 1e-9), ("lever_in", 4.8, 1e-9), ("lever_out", 7.647521, 1e-6),
             ("hook_in", 7.847521, 1e-6), ("latch_w", 20.695042, 1e-6), ("pad_front", 2, 1e-9), ("lock_slot_w", 9.430940, 1e-6),
@@ -54,7 +54,7 @@ def _check_invariants(s):
     # over center: P1 on the -u side of the line K -> P0
     cross = (P0[0] - K[0]) * (P1[1] - K[1]) - (P0[1] - K[1]) * (P1[0] - K[0])
     assert cross < 0, cross  # K -> P0 points down: its left (cross > 0) is +u, so the wall side is cross < 0
-    assert near(d(BAR, (g("lock_k_u"), g("lock_bar_c_z"))), g("hook_preload"), 1e-9)
+    assert near(d(BAR, (g("lock_k_u"), g("lock_bar_c_z"))), g("latch_preload"), 1e-9)
 
 
 def test_lock_geometry_invariants():
@@ -153,7 +153,7 @@ def lever_uz(doc, du, dz):
 
 def test_base_and_lever():
     doc = built()
-    lc, dc = v(doc, "latch_clearance"), v(doc, "lock_dovetail_clearance")
+    lc, dc = v(doc, "latch_clearance"), v(doc, "latch_dovetail_fit")
     for label in ("LatchBases", "LatchLevers"):
         solids = get(doc, label).Shape.Solids
         assert len(solids) == int(v(doc, "lock_count")) and all(is_sound(s) for s in solids), label
@@ -314,7 +314,7 @@ def test_lock_matches_mockup():
         _same(get(doc, "LatchHook").Shape, m["hook"].translated(shift), "hook")
         # the base only in front of its dovetail key: the key was added after
         # the test prints (probes in test_dovetail_key)
-        key_u = v(doc, "slot_in_u") + v(doc, "lock_dovetail_clearance") + v(doc, "lock_key_d")
+        key_u = v(doc, "slot_in_u") + v(doc, "latch_dovetail_fit") + v(doc, "lock_key_d")
         before_key = Part.makeBox(40, 40, 60, App.Vector(c - 20, -rd / 2 - key_u - 40, sz - 40))
         _same(get(doc, "LatchBase").Shape.common(before_key), m["base"].translated(shift).common(before_key), "base")
         # the lever only within lever_len of P0: its end's slant was flipped
@@ -345,7 +345,7 @@ def test_dovetail_key():
     (the slot likewise, with a 45 deg flare above): upside down it won't
     go in."""
     doc = built()
-    c, si, dc = v(doc, "lock_c0"), v(doc, "slot_in_u"), v(doc, "lock_dovetail_clearance")
+    c, si, dc = v(doc, "lock_c0"), v(doc, "slot_in_u"), v(doc, "latch_dovetail_fit")
     kh, kd, pb = v(doc, "lock_key_h"), v(doc, "lock_key_d"), v(doc, "pad_bot")
     base = get(doc, "LatchBase").Shape
     at = lambda u, z: lock.point(doc, u, z, c)
@@ -369,11 +369,11 @@ def test_dovetail_key():
 
 def test_detent():
     """A nub on the slot's wide face just below the seated base: flat on
-    top (the base can drop lock_dovetail_clearance onto it, no further), a
+    top (the base can drop latch_dovetail_fit onto it, no further), a
     lock_detent_ramp ramp underneath; only the base's full-depth part
     (below its key) runs into it on the way in."""
     doc = built()
-    c, si, dc = v(doc, "lock_c0"), v(doc, "slot_in_u"), v(doc, "lock_dovetail_clearance")
+    c, si, dc = v(doc, "lock_c0"), v(doc, "slot_in_u"), v(doc, "latch_dovetail_fit")
     h, top, ramp = v(doc, "lock_nub_h"), v(doc, "lock_nub_top"), math.radians(v(doc, "lock_detent_ramp"))
     bot = top - h / math.tan(ramp)
     assert in_part(doc, "Bottom", c, si + 0.05, top - 0.05)

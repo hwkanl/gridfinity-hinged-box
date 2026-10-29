@@ -27,7 +27,7 @@ Needs FreeCAD 1.1 or newer.
 | Export STLs | Write the STLs of the edited box (if it is the active document) or of the generated box |
 | Presets | Make, edit and delete presets (printer/material tolerances) |
 | Calibrate | Guided test-print sweeps that fill a preset with your printer's tolerances |
-| Test prints | Hinge and lock test pieces, one set or a sweep of one tolerance |
+| Test prints | Four small parts that test a preset: the hinge, its dovetail slot, the latch and its pad with the lid's lip |
 
 Presets are kept in FreeCAD's user data directory, under
 `hwkan_gfbox/presets/` (`~/.local/share/FreeCAD/v1-1/` on Linux,
@@ -61,7 +61,7 @@ to the lid's back. After printing, swing each leaf down past the lid's
 rim (toward the side that lay on the bed) until it hangs with its flat
 side toward the box; lowering the lid onto the bottom slides the leaves'
 dovetails into the slots in the hinge ribs, until a notch in each leaf
-snaps over the nub above its slot (`hinge_detent` sets how hard). The leaf ends sit
+snaps over the nub above its slot (`hinge_detent_height` sets how hard). The leaf ends sit
 only `hinge_clearance` from the lid's knuckles all the way down to the bed, so
 a strong first-layer squish (elephant's foot) can weld them together:
 reduce the first-layer squish, or break them free after printing.
@@ -85,9 +85,9 @@ lip rests on the pad. Both are part of the lid and bottom STLs.
 `latch.stl` is one latch (base, lever and hook, printed in place with
 D-shaped through-axles); print it once per lock. To fit it: slide the base
 up into the pad's dovetail slot from below until it snaps over the nub at
-the slot's foot (no glue; `lock_detent` sets how hard it snaps), then swing the
+the slot's foot (no glue; `latch_detent_height` sets how hard it snaps), then swing the
 hook over the lip's channel and press the lever shut. The latch is over
-center and draws the hook bar into the channel: its pull (`hook_preload`)
+center and draws the hook bar into the channel: its pull (`latch_preload`)
 presses the lid onto the bottom, so it works the same for every box
 height. The minimum height is 3 units (`gf_z_units` >= 3): a lower box has
 no room for the lever.
@@ -105,19 +105,13 @@ command in `hwkan_gfbox/tests/test_readme.py`).
 | `gf_z_units` | 6 | bin height in 7 mm units (stacking lip not included) |
 | `hinge_count` | 2 | number of hinges along the back wall (2 to gf_x, as many as fit) |
 | `lock_count` | 2 | number of locks along the front wall (1 to gf_x, as many as fit) |
-| `feet_xy_clearance` | 0.25 mm | lid feet shrunk by this per side vs a standard bin base |
-| `feet_z_clearance` | 0.5 mm | lid feet raised by this above a seated bin base; the lid never presses on the bins |
-| `lip_clearance` | 0.2 mm | gap between the rim's round bead (bottom) and its channel (lid), normal to the arc |
-| `hinge_clearance` | 0.2 mm | print-in-place gap between the free leaf and the lid knuckles, pins and lid face |
-| `dovetail_clearance` | 0.1 mm | gap between the leaf's dovetail sides and its slot's, normal to the sides (the slot's floor stays nominal) |
-| `nub_clearance` | 0.15 mm | gap between the seated leaf's notch edge and the hinge nub's flat underside: how far the snapped leaf can lift |
-| `latch_clearance` | 0.25 mm | print-in-place gap between the latch's base, lever and hook, and around their axles |
-| `lock_dovetail_clearance` | 0.1 mm | gap between the latch base's dovetail and the pad's slot (sides, normal to the face, and the slot's roof) |
-| `lock_seat_clearance` | 0.25 mm | gap around the hook bar in the lip's seat: the seat's curve is this much wider than the bar's round underside |
-| `stack_clearance` | 0.2 mm | gap between a lid's stacking notches and the grooves under the box stacked on it, normal to their faces (and at their ends); at most about 0.28 at default sizes (the grooves stay in the wall) |
-| `hook_preload` | 0.2 mm | the hook is this much shorter than at zero pressure: the latch's pull on the lid |
-| `lock_detent` | 0.4 mm | the nub below the seated latch base stands this far into its dovetail's full-depth part: the snap the base clicks over (0 = no snap, the nub just touches) |
-| `hinge_detent` | 0.6 mm | the nub above each hinge slot stands this far out of the slot's wide face into the leaf's notch: the snap the leaf's dovetail flexes over on the way in (0 = no snap) |
+| `hinge_clearance` | 0.2 mm | Play in the hinge, which prints in one piece with the lid. Smaller: a firmer hinge with less wobble, but the print-in-place parts may fuse. Larger: turns freely, with more wobble. |
+| `hinge_dovetail_fit` | 0.1 mm | How snugly the hinge leaf slides into its slot on the box's back. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may rattle. |
+| `hinge_detent_height` | 0.6 mm | How firmly the hinge leaf clicks into its slot. Larger: a firmer click, harder to push in and pull out. 0: no click. |
+| `latch_clearance` | 0.25 mm | Play in the latch, whose base, lever and hook print in one piece. Smaller: less wobble, but the print-in-place parts may fuse. Larger: moves freely, with more wobble. |
+| `latch_dovetail_fit` | 0.1 mm | How snugly the latch slides into its slot on the box's front. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may wiggle. |
+| `latch_detent_height` | 0.4 mm | How firmly the latch clicks into its slot. Larger: a firmer click, harder to push in and pull out. 0: no click. |
+| `latch_preload` | 0.2 mm | How hard the closed latch pulls the lid down. Larger: a tighter lid and a firmer snap, but harder to close. Smaller: easier to close, the lid may rattle. 0: no pull. |
 
 The inputs say what box you get; the tolerances and fits depend on your
 printer and material and come from a **preset**. Lengths are in mm.
@@ -130,7 +124,7 @@ but the model is not guaranteed to rebuild correctly when they change.
 A preset is a JSON file holding the tolerance and fit values above, e.g. one
 per printer and material:
 
-    {"format": 1, "note": "Prusa MK4, PETG", "values": {"hinge_clearance": 0.15, "lip_clearance": 0.25}}
+    {"format": 1, "note": "Prusa MK4, PETG", "values": {"hinge_clearance": 0.15, "latch_clearance": 0.2}}
 
 Values it leaves out are the defaults. Presets live in FreeCAD's user data
 directory (`hwkan_gfbox/presets/NAME.json` under it); `default` is built in.
@@ -144,7 +138,7 @@ is used instead.
     scripts/fc.sh scripts/presets.py path prusa-petg         # where its file is
 
 Choose one with `--preset NAME` (or `--preset path/to/file.json`) on
-`build_box.py`, `make_stls.py` and `make_test_prints.py`. `--set` can't
+`build_box.py`, `make_stls.py` and `make_test_prints.py` (which takes no `--set`). `--set` can't
 change a preset's values: edit the preset instead. In the FreeCAD document
 the `Params` sheet holds the inputs and the preset's name (the `preset`
 cell); the `Preset` sheet shows the values the box was built with. Every
@@ -183,27 +177,19 @@ on the next build. To save the model file headless:
 
 ## Test prints
 
-Small prints of only the hinge and only the lock, cut from a box built with
-your values, to tune the printer-dependent gaps before printing a box:
+Four small parts that test a preset (your printer and material's gaps)
+without printing a box: the hinge and the lock, cut from a small box built
+with the default inputs and that preset:
 
-    scripts/fc.sh scripts/make_test_prints.py [--preset NAME] [--set NAME=VALUE ...] [--out build/test_prints]
+    scripts/fc.sh scripts/make_test_prints.py [--preset NAME|PATH] [--out build/test_prints] [--fine]
 
-writes one set: `hinge_lid` (lid strip with the leaf printed in place),
-`hinge_rib` (the leaf's slot), `leaf`, `latch` (printed in place),
-`lock_pad` (the latch base's slot) and `latch_base`. To compare values of
-one tolerance on one plate:
-
-    scripts/fc.sh scripts/make_test_prints.py --sweep latch_clearance=0.15,0.2,0.25
-
-repeats only the piece that tolerance affects, each copy engraved with its
-value on its underside (the bed face, mirrored so it reads from below). The
-pieces are `hinge_clearance`: `hinge_lid`; `latch_clearance`: `latch`;
-`dovetail_clearance`: `leaf`, plus one `hinge_rib`; `lock_dovetail_clearance`:
-`latch_base`, plus one `lock_pad`. In the GUI, execute
-`scripts/make_test_prints.py` as a macro: it uses the open document's inputs and preset values and asks for the sweep and the output folder in a dialog. Every value is checked
-before anything is built; one the generator rejects stops the run with the
-reason (`dovetail_clearance` must stay below about 0.35 mm at the default
-`hinge_clearance`; the dialog only suggests values the generator accepts).
+writes `hinge_lid` (a lid strip with the leaf printed in place), `hinge_rib`
+(the leaf's dovetail slot), `latch` (base, lever and hook printed in place)
+and `lock_front` (the lock pad with the latch base's dovetail slot and, on
+it, the lid's lip, as one part), plus `build_info.json`. Slide the leaf into
+the rib and the latch base into the pad, then close the latch over the lip.
+In the GUI, the *Test prints* command asks for the preset (the open box's
+first) and the folder. To find a preset's values, use *Calibrate*.
 
 ## Calibration
 
@@ -220,12 +206,12 @@ the script which piece was best:
 | Test | Value | Print | Too tight / too loose |
 |---|---|---|---|
 | A | `hinge_clearance` | lid strip with its leaf printed in place | `stuck` / `sloppy` |
-| B | `dovetail_clearance` | leaves, and one rib with its slot | `tight` / `loose` |
-| C | `hinge_detent` | ribs with their nub, and one leaf | `hard` / `weak` |
+| B | `hinge_dovetail_fit` | leaves, and one rib with its slot | `tight` / `loose` |
+| C | `hinge_detent_height` | ribs with their nub, and one leaf | `hard` / `weak` |
 | D | `latch_clearance` | latches printed in place | `stuck` / `sloppy` |
-| E | `lock_dovetail_clearance` | latch bases, and one pad | `tight` / `loose` |
-| F | `lock_detent` | pads with their nub, and one base | `hard` / `weak` |
-| G | `hook_preload` | complete latches without the base's key, to try on a printed box | `hard` / `weak` |
+| E | `latch_dovetail_fit` | latch bases, and one pad | `tight` / `loose` |
+| F | `latch_detent_height` | pads with their nub, and one base | `hard` / `weak` |
+| G | `latch_preload` | complete latches without the base's key, to try on a printed box | `hard` / `weak` |
 
 Each test uses the values chosen before it. A label's number is a fixed
 value: number 1 is 0 mm, each number one step more (0.025 mm for the

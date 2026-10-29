@@ -108,13 +108,13 @@ def test_a_missing_preset_without_a_recorded_source_falls_back():
 def _older_document(doc_name):
     """A document as built before presets: no preset cell and no Preset
     sheet; its tolerances and fits on Params (hinge_clearance edited to 0.3,
-    lock_seat_clearance missing)."""
+    latch_preload missing)."""
     doc = params_document([("gf_x", "4")], doc_name=doc_name)[0]
     params = doc.getObject("Params")
     params.setAlias(params.getCellFromAlias("preset"), "")
     row = 100
     for name, val in presets.defaults().items():
-        if name != "lock_seat_clearance":
+        if name != "latch_preload":
             row += 1
             params.set(f"B{row}", f"={0.3 if name == 'hinge_clearance' else val} mm")
             params.setAlias(f"B{row}", name)
@@ -133,7 +133,7 @@ def test_an_older_document_keeps_its_values():
         overrides, preset, warnings = sheet_settings(params)
         assert overrides == [("gf_x", "4")], overrides
         assert preset.ref == "" and preset.values["hinge_clearance"] == 0.3
-        assert preset.values["lock_seat_clearance"] == presets.defaults()["lock_seat_clearance"]
+        assert preset.values["latch_preload"] == presets.defaults()["latch_preload"]
         assert len(warnings) == 1 and "no preset" in warnings[0], warnings
     finally:
         App.closeDocument(doc.Name)

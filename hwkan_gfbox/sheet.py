@@ -15,6 +15,7 @@ SOURCE_ALIAS = "preset_source"  # the Preset cell naming the preset its values w
 PRESET_TITLE = "Preset (its tolerance and fit values are on the Preset sheet)"
 PRESET_NOTE = ("The values this box was built with, from the preset named on Params. Every build "
                "writes them: edit the preset file (scripts/presets.py path NAME), not these cells.")
+PRESET_SECTION = "Preset values (the hinge's, then the latch's; they depend on your printer)"
 
 
 class ParamError(ValueError):
@@ -23,7 +24,7 @@ class ParamError(ValueError):
 
 def _cell_text(val, tier):
     """Cell content for a row: names in a formula that live on another sheet
-    point at it (Params.gf_x, Preset.lip_clearance)."""
+    point at it (Params.gf_x, Preset.hinge_clearance)."""
     if not val.startswith("="):
         return val
     own = sheet_of(tier)
@@ -34,26 +35,27 @@ def _cell_text(val, tier):
     return re.sub(r"\b[a-z_][a-z0-9_]*\b", name, val)
 
 
-def _fill(sheet, tiers, note=None):
+def _fill(sheet, tiers, note=None, merged=None):
+    """One section per tier in SECTIONS order; with merged (a title), one
+    section of every tier's rows in PARAMS order instead."""
     for col, text in zip("ABCD", ("name", "value", "tier", "comment")):
         sheet.set(f"{col}1", text)
     row = 1
     if note:
         row += 1
         sheet.set(f"A{row}", "'" + note)
-    for tier, title in SECTIONS:
-        if tier not in tiers:
-            continue
+    groups = [(tiers, merged)] if merged else [((tier,), title) for tier, title in SECTIONS if tier in tiers]
+    for group, title in groups:
         row += 2
         sheet.set(f"A{row}", title)
         for name, val, t, comment in PARAMS:
-            if t != tier:
+            if t not in group:
                 continue
             row += 1
             sheet.set(f"A{row}", name)
             sheet.set(f"B{row}", _cell_text(val, t))
             sheet.setAlias(f"B{row}", name)
-            sheet.set(f"C{row}", tier)
+            sheet.set(f"C{row}", t)
             sheet.set(f"D{row}", "'" + comment)
     return row
 
@@ -80,7 +82,7 @@ def create_params_sheet(doc):
     _add_text_cell(params, _fill(params, [INPUT]), PRESET_TITLE, PRESET_ALIAS,
                    "a preset name (scripts/presets.py list) or a JSON file; "
                    "empty: no preset, the values on the Preset sheet are kept")
-    _add_text_cell(preset, _fill(preset, PRESET_TIERS, PRESET_NOTE), "Source", SOURCE_ALIAS,
+    _add_text_cell(preset, _fill(preset, PRESET_TIERS, PRESET_NOTE, PRESET_SECTION), "Source", SOURCE_ALIAS,
                    "the preset these values were loaded from (a rebuild tells a moved "
                    "document from a mistyped preset name by it)")
     _fill(internal, [tier for tier, _ in SECTIONS if tier != INPUT and tier not in PRESET_TIERS])

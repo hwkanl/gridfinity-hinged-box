@@ -13,15 +13,15 @@ import FreeCAD as App
 import Part
 
 from hwkan_gfbox.build import build
-from hwkan_gfbox.params import PARAMS, PRESET_TIERS
+from hwkan_gfbox.params import DESIGN_GAPS, PARAMS, PRESET_TIERS
 from hwkan_gfbox.parts import lock
 from hwkan_gfbox.shapes import get
 from hwkan_gfbox.sheet import SHEET_NAME, value
 from hwkan_gfbox.export import ExportError, check_part, latch_print_shapes, leaves_print_shapes, print_shape
 
-# The preset's values, plus bin_clearance (a design value now, but still a gap
-# whose extremes matter: the closing lid against the bins).
-TOLERANCE_NAMES = [name for name, _, tier, _ in PARAMS if tier in PRESET_TIERS] + ["bin_clearance"]
+# The preset's values, plus the gaps that are design values (their extremes
+# still matter: e.g. the closing lid against the bins).
+TOLERANCE_NAMES = [name for name, _, tier, _ in PARAMS if tier in PRESET_TIERS] + list(DESIGN_GAPS)
 SIZES = [
     ("2x2x3", [("gf_x", "2"), ("gf_y", "2"), ("gf_z_units", "3")]),
     ("3x2x6", []),
@@ -32,20 +32,20 @@ SIZES = [
 ]
 # Low and high tolerance sets. The hinge needs hinge_clearance > 0, and at most
 # about 0.48 at default dimensions (the leaf's front must clear the lid face
-# while it swings); dovetail_clearance at most about 0.35 (the leaf body in its
+# while it swings); hinge_dovetail_fit at most about 0.35 (the leaf body in its
 # slot). Those two get their own extremes.
 # The latch needs latch_clearance > 0 (printed in place). bin_clearance must
 # exceed about 0.51 at default dimensions (the closing lid's inner back edge
 # reaches 0.76 in from the back wall below the bin tops; the bins stand 0.25
 # inside their cells).
-# nub_clearance must stay below leaf_notch_h - hinge_nub_h (0.5).
+# hinge_detent_clearance must stay below leaf_notch_h - hinge_nub_h (0.5).
 # stack_clearance at most about 0.28 at default dimensions (the grooves stay
 # in the wall: wall_t / 2 +- (stack_w / 2 + stack_clearance * sqrt(2))).
-# hook_preload and lock_detent are interferences, not gaps: low 0, high 0.5
-# (lock_detent's limit, lock_key_d).
-_LOW = {"hinge_clearance": "0.1", "latch_clearance": "0.1", "hook_preload": "0", "bin_clearance": "0.6"}
-_HIGH = {"hinge_clearance": "0.4", "dovetail_clearance": "0.25", "latch_clearance": "0.4", "hook_preload": "0.5",
-         "bin_clearance": "1.5", "nub_clearance": "0.4", "stack_clearance": "0.25"}
+# latch_preload and latch_detent_height are interferences, not gaps: low 0, high 0.5
+# (latch_detent_height's limit, lock_key_d).
+_LOW = {"hinge_clearance": "0.1", "latch_clearance": "0.1", "latch_preload": "0", "bin_clearance": "0.6"}
+_HIGH = {"hinge_clearance": "0.4", "hinge_dovetail_fit": "0.25", "latch_clearance": "0.4", "latch_preload": "0.5",
+         "bin_clearance": "1.5", "hinge_detent_clearance": "0.4", "stack_clearance": "0.25"}
 TOLERANCE_SETS = [
     ("tol=default", []),
     ("tol=low", [(n, _LOW.get(n, "0")) for n in TOLERANCE_NAMES]),
@@ -424,7 +424,7 @@ def latch_fit_checks(doc):
     """The latches as modelled (closed): (name, ok) pairs. Shared with
     tests/test_lock.py."""
     sheet = doc.getObject(SHEET_NAME)
-    n, lc, dc = (value(sheet, k) for k in ("lock_count", "latch_clearance", "lock_dovetail_clearance"))
+    n, lc, dc = (value(sheet, k) for k in ("lock_count", "latch_clearance", "latch_dovetail_fit"))
     arrays = {label: get(doc, label).Shape for label in ("LatchBases", "LatchLevers", "LatchHooks")}
     bottom, lid = get(doc, "Bottom").Shape, get(doc, "Lid").Shape
     yield "latches: one sound base, lever and hook per lock", all(
@@ -432,7 +432,7 @@ def latch_fit_checks(doc):
     bases, levers, hooks = arrays["LatchBases"], arrays["LatchLevers"], arrays["LatchHooks"]
 
     g = gap(bases, bottom)
-    yield f"closed: bases in their slots, {g:.3f} mm (= lock_dovetail_clearance)", (
+    yield f"closed: bases in their slots, {g:.3f} mm (= latch_dovetail_fit)", (
         bases.common(bottom).Volume <= EPS and abs(g - dc) <= 1e-3)
     g = gap(levers, bases)
     yield f"closed: levers clear the bases by {g:.3f} mm (= latch_clearance)", (

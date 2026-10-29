@@ -1,18 +1,20 @@
-"""Test prints of the hinge and the lock, cut from a really built box, to
-tune the printer-dependent gaps without printing a box (spec:
-docs/superpowers/specs/2026-10-05-test-prints-design.md).
+"""Test prints of one preset: the hinge and the lock, cut from a really
+built small box (the default inputs and the preset), to check the preset's
+gaps without printing a box (spec:
+docs/superpowers/specs/2026-10-05-test-prints-design.md). Four parts:
+hinge_lid (lid strip, leaf printed in place), hinge_rib (the leaf's
+dovetail slot), latch (printed in place) and lock_front (the lock pad with
+its slot and the lid's lip above it, one part). The pieces and the labelled
+sweeps are also what the calibration (hwkan_gfbox.calibration) prints.
 
 Entry point: scripts/make_test_prints.py
     headless: scripts/fc.sh scripts/make_test_prints.py [--preset NAME|PATH]
-              [--set NAME=VALUE ...] [--sweep NAME=V1,V2,...] [--out DIR] [--fine]
-              (default output: build/test_prints/)
-    GUI:      execute scripts/make_test_prints.py as a macro: a dialog asks
-              for the sweep and the folder; the open hwkan_gfbox document's Params values
-              are used (it is left as it is).
+              [--out DIR] [--fine]   (default output: build/test_prints/)
+    GUI:      the Test prints command: a dialog asks for the preset and the
+              folder.
 """
 import json
 import os
-import re
 import sys
 
 import FreeCAD as App
@@ -21,15 +23,14 @@ import Part
 
 from hwkan_gfbox import presets
 from hwkan_gfbox.build import BuildError, box_document, build, params_document
-from hwkan_gfbox.cli import parse_overrides
 from hwkan_gfbox.export import (LATCH_ROTATION, MESH_SETTINGS, ExportError, build_info, check_part,
                                 latch_print_shapes, leaves_print_shapes, place_on_bed)
 from hwkan_gfbox.shapes import get
-from hwkan_gfbox.sheet import SHEET_NAME, ParamError, preset_values, sheet_overrides, value
+from hwkan_gfbox.sheet import SHEET_NAME, ParamError, sheet_preset, value
 from hwkan_gfbox.validate import validate
 
-# Every test-print build is this small box (after the user's values): the
-# pieces are local to one hinge and one lock, which don't depend on the size.
+# Every test-print build is this small box (after any overrides, e.g. calibration's):
+# the pieces are local to one hinge and one lock, which don't depend on the size.
 SMALL_BOX = [("gf_x", "2"), ("gf_y", "2"), ("gf_z_units", "3"), ("hinge_count", "2"), ("lock_count", "1")]
 MARGIN = 3.0   # each strip reaches this far beyond the hinge or pad on either side (mm)
 ROW_GAP = 5.0  # gap between the copies of a sweep (mm)
@@ -106,6 +107,21 @@ def _lock_pad(doc):
     return _with_tab(strip, c - hw, c + hw, -_inner(doc), 1, z0)
 
 
+def _lock_front(doc):
+    """The lock pad's strip (_lock_pad) with the lid's strip above it (the
+    lock lip and the lid's wall from its inner face out, over the same X),
+    fused as the box stands closed: one part to hook a latch onto."""
+    c = _val(doc, "lock_c0")
+    hw = _val(doc, "pad_hw") + MARGIN
+    lid = get(doc, "Lid").Shape.copy()
+    bb = lid.optimalBoundingBox(False)
+    lid_strip = _strip(lid, c - hw, c + hw, bb.YMin - 1, -_inner(doc), bb.ZMin - 1, bb.ZMax + 1)
+    front = Part.makeCompound(_lock_pad(doc)).fuse(lid_strip).Solids
+    if len(front) != 1:
+        raise BuildError(f"lock_front: the pad and the lid strip fused into {len(front)} solids, not one")
+    return front
+
+
 def _leaf(doc):
     """The first hinge's leaf alone, swung up as it prints with the lid."""
     return [_nearest(leaves_print_shapes(doc), _val(doc, "hinge_c0"))]
@@ -132,28 +148,26 @@ def _latch_keyless(doc):
 
 # Test-print pieces: name -> (its solids in the model frame; rotation before
 # it goes on the bed, as in export.PARTS; index of the solid that takes a
-# sweep's label, None = never labelled; the tolerance whose sweep repeats it).
+# sweep's label).
 PIECES = {
-    "hinge_lid": (_hinge_lid, None, 0, "hinge_clearance"),
-    "hinge_rib": (_hinge_rib, None, 0, None),
-    "leaf": (_leaf, None, 0, "dovetail_clearance"),
-    "latch": (latch_print_shapes, LATCH_ROTATION, 0, "latch_clearance"),  # label on the base (the lever and hook are too narrow)
-    "lock_pad": (_lock_pad, None, 0, None),
-    "latch_base": (_latch_base, LATCH_ROTATION, 0, "lock_dovetail_clearance"),
-    "latch_keyless": (_latch_keyless, LATCH_ROTATION, 0, None),
+    "hinge_lid": (_hinge_lid, None, 0),
+    "hinge_rib": (_hinge_rib, None, 0),
+    "leaf": (_leaf, None, 0),
+    "latch": (latch_print_shapes, LATCH_ROTATION, 0),  # label on the base (the lever and hook are too narrow)
+    "lock_pad": (_lock_pad, None, 0),
+    "lock_front": (_lock_front, None, 0),
+    "latch_base": (_latch_base, LATCH_ROTATION, 0),
+    "latch_keyless": (_latch_keyless, LATCH_ROTATION, 0),
 }
-# The basic set (no sweep): every piece but the calibration-only ones.
-BASIC_SET = ("hinge_lid", "hinge_rib", "leaf", "latch", "lock_pad", "latch_base")
-SWEEPABLE = {tol: name for name, (_, _, _, tol) in PIECES.items() if tol}
-# A dovetail sweep adds one slot strip, cut from the build with the largest value.
-SLOT_PIECE = {"dovetail_clearance": "hinge_rib", "lock_dovetail_clearance": "lock_pad"}
+# The test prints of a preset: one STL each.
+TEST_SET = ("hinge_lid", "hinge_rib", "latch", "lock_front")
 
 
 def piece(doc, name):
     """The piece's solids, checked, in print position (on Z = 0, centered in
     XY), in PIECES order (for hinge_lid: strip, leaf; for latch: base,
     lever, hook)."""
-    solids_of, rotation, _, _ = PIECES[name]
+    solids_of, rotation, _ = PIECES[name]
     solids = solids_of(doc)
     for k, solid in enumerate(solids):
         check_part(name if len(solids) == 1 else f"{name} solid {k + 1}", solid)
@@ -166,11 +180,6 @@ LABEL_SIZES = tuple(k / 4 for k in range(48, 11, -1))  # font sizes tried, 12 do
 LABEL_DEPTH = 0.6   # engraving depth (mm): at least three 0.2 layers
 LABEL_STROKE = 0.15  # osifont is thin: each stroke is thickened by this on both sides (mm)
 LABEL_MARGIN = 0.8  # the text keeps this far inside its face (mm)
-
-
-def label_text(val):
-    """Two decimals ("0.20"), or as many as the value has ("0.125")."""
-    return f"{val:.2f}" if abs(round(val, 2) - val) < 1e-9 else f"{val:g}"
 
 
 def _polygon_face(face):
@@ -271,44 +280,6 @@ DOC_PREFIX = "hwkan_gfbox_tp"        # the builds' documents (closed after cutti
 SHOW_DOC = "hwkan_gfbox_testprints"  # GUI: the pieces are shown here
 
 
-def parse_sweep(text):
-    """'NAME=V1,V2,...' -> (NAME, [V1, V2, ...]). Values are mm, separated by
-    commas, semicolons or spaces, each optionally followed by 'mm'. Raises
-    ParamError unless NAME is sweepable and every value is a number > 0."""
-    name, sep, rest = text.partition("=")
-    name = name.strip()
-    if name not in SWEEPABLE:
-        raise ParamError(f"--sweep: '{name}' can't be swept; choose one of {', '.join(SWEEPABLE)}")
-    items = [t for t in re.split(r"[,;\s]+", re.sub(r"\s*mm\b", "", rest)) if t]
-    if not sep or not items:
-        raise ParamError(f"--sweep expects {name}=V1,V2,... (mm)")
-    values = []
-    for item in items:
-        try:
-            val = float(item)
-        except ValueError:
-            raise ParamError(f"--sweep {name}: '{item}' is not a number")
-        if val <= 0:
-            raise ParamError(f"--sweep {name}: values must be > 0 (got {item})")
-        values.append(val)
-    return name, values
-
-
-def default_sweep_values(current, ok=lambda val: True):
-    """The dialog's starting values: current - 0.05, current, current + 0.05
-    (half of current instead of current - 0.05 if that would not be > 0);
-    if ok rejects one, the window moves away from that limit (up to two
-    steps) while keeping current; failing that, current alone."""
-    step = 0.05
-    low = current - step if current > step + 1e-9 else current / 2
-    windows = [(low, current, current + step), (current, current + step, current + 2 * step),
-               (current - 2 * step, current - step, current)]
-    for window in windows:
-        if all(x > 0 and ok(x) for x in window):
-            return ", ".join(f"{round(x, 3):g}" for x in window)
-    return f"{round(current, 3):g}"
-
-
 def valid_value(overrides, tol, val, preset=None):
     """True if the generator accepts tol = val with this preset and these
     overrides (the sheets alone; no box is built)."""
@@ -406,44 +377,29 @@ def _write_plates(files, out_dir, fine):
     return paths
 
 
-def run(overrides=(), sweep=None, out_dir=DEFAULT_OUT, fine=False, preset=None):
-    """Build, cut, label and write the test prints. preset: a presets.Preset
-    applied before the overrides (None: the defaults). sweep: None (one set of
-    every piece at the overrides' values) or (tolerance, values) from
-    parse_sweep. Returns (written paths, {STL name: plate}, warnings)."""
-    if sweep is None:
-        doc, warnings = _build(overrides, 0, preset=preset)
-        try:
-            files = {f"{name}.stl": _plate([piece(doc, name)]) for name in BASIC_SET}
-            info = build_info(doc)
-        finally:
-            App.closeDocument(doc.Name)
-        paths = _write_plates(files, out_dir, fine)
-        info_name = "build_info.json"
-    else:
-        tol, values = sweep
-        name, slot = SWEEPABLE[tol], SLOT_PIECE.get(tol)
-        paths, files, info, warnings = write_sweep(
-            tol, values, [label_text(v) for v in values], name, out_dir, f"{name}_{tol}_sweep.stl",
-            slot, slot and f"{slot}_{tol}_sweep.stl", overrides, preset, fine)
-        info["sweep"] = {"name": tol, "values": values}
-        info_name = f"build_info_{tol}_sweep.json"
-    with open(os.path.join(out_dir, info_name), "w") as f:
+def run(preset=None, out_dir=DEFAULT_OUT, fine=False):
+    """Build, cut and write the test prints of preset (a presets.Preset; None:
+    the defaults): one STL per TEST_SET piece, from one small box with the
+    default inputs, plus build_info.json. Returns (written paths,
+    {STL name: plate}, warnings)."""
+    doc, warnings = _build((), 0, preset=preset)
+    try:
+        files = {f"{name}.stl": _plate([piece(doc, name)]) for name in TEST_SET}
+        info = build_info(doc)
+    finally:
+        App.closeDocument(doc.Name)
+    paths = _write_plates(files, out_dir, fine)
+    with open(os.path.join(out_dir, "build_info.json"), "w") as f:
         json.dump(info, f, indent=2)
     return paths, files, warnings
 
 
-def gui_inputs():
-    """GUI: (overrides, {tolerance: current value}) from the open generated
-    document's Params sheet (left open, unchanged): its inputs and the
-    preset values it was built with; or ([], defaults)."""
+def gui_preset():
+    """GUI: the name of the open generated box's preset if it still exists,
+    else the default: the dialog's first choice."""
     box = box_document()
-    if box is not None:
-        sheet = box.getObject(SHEET_NAME)
-        stored = [(name, f"{val!r} mm") for name, val in preset_values(sheet).items()]
-        return sheet_overrides(sheet) + stored, {tol: value(sheet, tol) for tol in SWEEPABLE}
-    defaults = presets.defaults()
-    return [], {tol: defaults[tol] for tol in SWEEPABLE}
+    name = box is not None and sheet_preset(box.getObject(SHEET_NAME))
+    return name if name in [n for n, _ in presets.list_presets()] else presets.DEFAULT
 
 
 def show(files):
@@ -472,19 +428,21 @@ def main(args):
         from hwkan_gfbox import testprints_dialog
         return testprints_dialog.ask_and_run()
     try:
-        overrides, preset, rest = parse_overrides(args)
-        sweep, out_dir, fine = None, DEFAULT_OUT, False
-        it = iter(rest)
+        preset, out_dir, fine = presets.load(presets.DEFAULT), DEFAULT_OUT, False
+        it = iter(args)
         for arg in it:
-            if arg == "--sweep":
-                sweep = parse_sweep(next(it, ""))
+            if arg == "--preset":
+                ref = next(it, None)
+                if not ref:
+                    raise ParamError("--preset expects a preset name or a JSON file")
+                preset = presets.load(ref)
             elif arg == "--out":
                 out_dir = next(it, "")
             elif arg == "--fine":
                 fine = True
             else:
-                raise ParamError(f"unexpected argument: {arg}")
-        paths, _, warnings = run(overrides, sweep, os.path.abspath(out_dir), fine, preset)
+                raise ParamError(f"unexpected argument: {arg} (usage: [--preset NAME|PATH] [--out DIR] [--fine])")
+        paths, _, warnings = run(preset, os.path.abspath(out_dir), fine)
     except ParamError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2

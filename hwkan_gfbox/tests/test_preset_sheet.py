@@ -8,7 +8,7 @@ from hwkan_gfbox.presets import Preset
 from hwkan_gfbox.shapes import get
 from hwkan_gfbox.sheet import ParamError, preset_values, sheet_preset, value
 
-PETG = Preset("petg", "petg", dict(presets.defaults(), hinge_clearance=0.15, lip_clearance=0.3, lock_detent=0.0))
+PETG = Preset("petg", "petg", dict(presets.defaults(), hinge_clearance=0.15, latch_clearance=0.3, latch_detent_height=0.0))
 
 
 def test_the_preset_cell_and_values():
@@ -23,7 +23,7 @@ def test_the_preset_cell_and_values():
     try:
         sheet = doc.getObject("Params")
         assert sheet_preset(sheet) == "petg"
-        assert value(sheet, "hinge_clearance") == 0.15 and value(sheet, "lock_detent") == 0
+        assert value(sheet, "hinge_clearance") == 0.15 and value(sheet, "latch_detent_height") == 0
         assert value(sheet, "gf_x") == 4 and preset_values(sheet) == PETG.values
     finally:
         App.closeDocument(doc.Name)
