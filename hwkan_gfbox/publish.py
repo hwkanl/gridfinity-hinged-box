@@ -12,7 +12,8 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WHITELIST = ["hwkan_gfbox", "scripts", "package.xml", "Init.py", "InitGui.py", "LICENSE", "README.md"]
+WHITELIST = ["hwkan_gfbox", "scripts", "package.xml", "Init.py", "InitGui.py", "LICENSE", "README.md", "DEVELOPING.md",
+             "images"]
 
 
 class PublishError(Exception):

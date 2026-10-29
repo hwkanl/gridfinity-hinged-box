@@ -48,8 +48,8 @@ TESTS = {t.letter: t for t in (
     Test("F", "latch_detent_height", 0.05, "lock_pad", "latch_base", (), "hard", "weak", False,
          "Push the base into each pad: pick the one that clicks in firmly and still goes in by hand."),
     Test("G", "latch_preload", 0.05, "latch_keyless", None, (), "hard", "weak", False,
-         "These latches are fitted to a box printed with this preset: fit each to it and close it, "
-         "and pick the one that holds the lid tight and still closes by hand."),
+         "These latches are fitted to a box, or to the lock_front test print, made with this preset: "
+         "fit each to it and close it, and pick the one that holds tight and still closes by hand."),
 )}
 
 
@@ -216,7 +216,7 @@ def status_text(preset, out_dir, gui=False):
         done = preset.calibration
         if (isinstance(done, dict) and done.get("current") is None and isinstance(done.get("tests"), str)
                 and "G" not in done["tests"]):
-            extra = (f"\ntest G ({TESTS['G'].param}) can be run on a box printed with this preset: {hint['run_g']}")
+            extra = (f"\ntest G ({TESTS['G'].param}) can be run on a box, or the lock_front test print, made with this preset: {hint['run_g']}")
         return (f"no calibration run in progress for preset '{preset.name}'. Its values:\n{values}\n"
                 f"{hint['start']}{extra}")
     test = TESTS[s["current"]]
@@ -389,5 +389,6 @@ def finished_text(preset, gui=False):
     lines += [f"  {TESTS[t].param} = {preset.values[TESTS[t].param]:g} mm ({t}{n})" for t, n in s["chosen"].items()]
     lines.append("print a box with it: " + hint["box"].format(ref=preset.ref))
     if "G" not in s["tests"]:
-        lines.append("then, to tune latch_preload on that box: " + hint["g"].format(ref=preset.ref))
+        lines.append("to tune latch_preload, on that box or a lock_front test print made with it: "
+                     + hint["g"].format(ref=preset.ref))
     return "\n".join(lines)

@@ -1,5 +1,6 @@
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 
@@ -15,6 +16,14 @@ def _git(where, *args):
     return subprocess.run(["git", "-C", where, *args], check=True, capture_output=True, text=True, env=ENV).stdout
 
 
+def _rmtree(path):
+    """shutil.rmtree that also removes git's read-only object files (Windows)."""
+    def clear(func, p, _):
+        os.chmod(p, stat.S_IWRITE)
+        func(p)
+    shutil.rmtree(path, onerror=clear)
+
+
 def _package_xml(email, version="0.1.0", date="2026-01-01"):
     return f'<version>{version}</version><date>{date}</date><maintainer email="{email}">m</maintainer>'
 
@@ -24,9 +33,11 @@ def _private(root, maintainer_email=PUBLIC_EMAIL):
     os.makedirs(os.path.join(root, "hwkan_gfbox", "__pycache__"))
     os.makedirs(os.path.join(root, "scripts"))
     os.makedirs(os.path.join(root, "docs"))
+    os.makedirs(os.path.join(root, "images"))
     files = {"hwkan_gfbox/__init__.py": '__version__ = "0.1.0"\n', "hwkan_gfbox/__pycache__/x.pyc": "",
              "scripts/a.py": "", "package.xml": _package_xml(maintainer_email),
-             "Init.py": "", "InitGui.py": "", "LICENSE": "", "README.md": "", "CLAUDE.md": "", "docs/spec.md": ""}
+             "Init.py": "", "InitGui.py": "", "LICENSE": "", "README.md": "", "DEVELOPING.md": "", "images/a.png": "",
+             "CLAUDE.md": "", "docs/spec.md": ""}
     for name, text in files.items():
         with open(os.path.join(root, name), "w") as f:
             f.write(text)
@@ -55,7 +66,7 @@ def test_stamp_writes_the_version_and_date():
         with open(os.path.join(root, "hwkan_gfbox", "__init__.py")) as f:
             assert f.read() == '__version__ = "0.2.0"\n'
     finally:
-        shutil.rmtree(root)
+        _rmtree(root)
 
 
 def test_publish_mirrors_the_whitelist_and_commits():
@@ -75,8 +86,8 @@ def test_publish_mirrors_the_whitelist_and_commits():
     finally:
         os.environ.clear()
         os.environ.update(saved)
-        shutil.rmtree(root)
-        shutil.rmtree(dest)
+        _rmtree(root)
+        _rmtree(dest)
 
 
 def test_publish_refuses_a_dirty_tree_and_a_non_checkout():
@@ -89,8 +100,8 @@ def test_publish_refuses_a_dirty_tree_and_a_non_checkout():
             f.write("changed")
         _expect_error("uncommitted changes", dest, root)
     finally:
-        shutil.rmtree(root)
-        shutil.rmtree(dest)
+        _rmtree(root)
+        _rmtree(dest)
 
 
 def test_publish_refuses_the_private_maintainer_email():
@@ -101,8 +112,8 @@ def test_publish_refuses_the_private_maintainer_email():
         _expect_error("public address", dest, root)
         assert os.listdir(dest) == [".git"]
     finally:
-        shutil.rmtree(root)
-        shutil.rmtree(dest)
+        _rmtree(root)
+        _rmtree(dest)
 
 
 def test_publish_refuses_to_commit_as_the_private_address():
@@ -119,5 +130,5 @@ def test_publish_refuses_to_commit_as_the_private_address():
     finally:
         os.environ.clear()
         os.environ.update(saved)
-        shutil.rmtree(root)
-        shutil.rmtree(dest)
+        _rmtree(root)
+        _rmtree(dest)

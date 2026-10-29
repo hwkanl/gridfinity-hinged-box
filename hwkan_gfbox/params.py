@@ -58,7 +58,7 @@ PARAMS = [
     ("hinge_clearance", "0.2 mm", TOLERANCE, "Play in the hinge, which prints in one piece with the lid. Smaller: a firmer hinge with less wobble, but the print-in-place parts may fuse. Larger: turns freely, with more wobble."),
     # hinge_dovetail_fit: gap between the leaf's dovetail sides and its slot's,
     # normal to the sides (the slot's floor stays nominal).
-    ("hinge_dovetail_fit", "0.1 mm", TOLERANCE, "How snugly the hinge leaf slides into its slot on the box's back. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may rattle."),
+    ("hinge_dovetail_fit", "0.125 mm", TOLERANCE, "How snugly the hinge leaf slides into its slot on the box's back. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may rattle."),
     # hinge_detent_height: the nub above each hinge slot stands this far out of
     # the slot's wide face into the leaf's notch, over which the leaf's
     # dovetail flexes on the way in.

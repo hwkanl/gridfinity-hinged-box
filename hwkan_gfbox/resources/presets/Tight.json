@@ -3,7 +3,7 @@
   "note": "shipped: tighter fits than default (hinge, dovetails, latch) for a well-tuned printer",
   "values": {
     "hinge_clearance": 0.15,
-    "hinge_dovetail_fit": 0.075,
+    "hinge_dovetail_fit": 0.1,
     "hinge_detent_height": 0.6,
     "latch_clearance": 0.2,
     "latch_dovetail_fit": 0.075,

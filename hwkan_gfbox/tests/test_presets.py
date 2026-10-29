@@ -44,7 +44,7 @@ def test_names_are_the_seven_preset_values():
     """What the test prints check, hinge then latch; the other gaps are design values."""
     assert presets.NAMES == ["hinge_clearance", "hinge_dovetail_fit", "hinge_detent_height", "latch_clearance",
                              "latch_dovetail_fit", "latch_detent_height", "latch_preload"]
-    assert presets.defaults()["hinge_dovetail_fit"] == 0.1 and presets.defaults()["hinge_detent_height"] == 0.6
+    assert presets.defaults()["hinge_dovetail_fit"] == 0.125 and presets.defaults()["hinge_detent_height"] == 0.6
 
 
 def test_default_needs_no_file():
@@ -140,7 +140,7 @@ def test_paths_are_read_as_files_and_kept_absolute():
 def test_overrides_are_mm_pairs_in_params_order():
     pairs = presets.overrides(presets.load("default"))
     assert [n for n, _ in pairs] == presets.NAMES
-    assert dict(pairs)["hinge_dovetail_fit"] == "0.1 mm" and dict(pairs)["latch_detent_height"] == "0.4 mm"
+    assert dict(pairs)["hinge_dovetail_fit"] == "0.125 mm" and dict(pairs)["latch_detent_height"] == "0.4 mm"
 
 
 def test_new_list_and_path():
@@ -175,7 +175,9 @@ def test_shipped_tight_is_found_after_the_users_and_read_only():
     with _base() as b:
         t = presets.load("Tight", b)
         assert presets.is_shipped(presets.resolve("Tight", b)) and presets.read_only("Tight", b)
-        assert t.values["hinge_clearance"] == 0.15 and t.values["hinge_dovetail_fit"] == 0.075
+        assert t.values["hinge_clearance"] == 0.15 and t.values["hinge_dovetail_fit"] == 0.1
+        loose = presets.load("Loose", b)
+        assert presets.read_only("Loose", b) and loose.values["hinge_clearance"] == 0.25
         assert dict(presets.list_presets(b))["Tight"] == t.note and t.note.startswith("shipped")
         assert presets.read_only("default", b) and not presets.read_only("nope", b)
         # a user preset of the same name wins, and is the user's to change

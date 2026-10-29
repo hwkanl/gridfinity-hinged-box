@@ -98,7 +98,7 @@ def test_pick_records_and_moves_on():
     assert p.values["hinge_clearance"] == 0.175
     s = p.calibration
     assert s["chosen"] == {"A": 8} and s["current"] == "B" and s["written"] is False
-    assert s["sweep"] == [3, 4, 5, 6, 7]  # hinge_dovetail_fit 0.09 -> 5
+    assert s["sweep"] == [4, 5, 6, 7, 8]  # hinge_dovetail_fit 0.125 -> 6
 
 
 def test_the_last_pick_ends_the_run():
@@ -180,7 +180,7 @@ def test_dialog_texts_have_no_command_line_hints():
     assert "--tests G" in cal.finished_text(p)
 
 def test_test_g_says_what_box_it_is_for():
-    assert "printed with this preset" in cal.TESTS["G"].check
+    assert "a box, or to the lock_front test print, made with this preset" in cal.TESTS["G"].check
 
 
 def test_sweep_files():
@@ -351,8 +351,8 @@ def test_end_to_end_with_real_builds():
         assert sorted(os.listdir(d)) == ["A_07-11.stl", "A_07-11.txt"]
         assert "A9 = 0.2 mm" in open(os.path.join(d, "A_07-11.txt")).read()
         assert _main(["e2e", "A9"], base, out, None)[0] == 0
-        assert {"B_03-07.stl", "B_03-07_hinge_rib.stl", "B_03-07.txt"} <= set(os.listdir(d))
-        txt = open(os.path.join(d, "B_03-07.txt")).read()
+        assert {"B_04-08.stl", "B_04-08_hinge_rib.stl", "B_04-08.txt"} <= set(os.listdir(d))
+        txt = open(os.path.join(d, "B_04-08.txt")).read()
         assert "hinge_detent_height = 0" in txt and "hinge_clearance = 0.2" in txt
         assert _saved(base, "e2e")["calibration"]["chosen"] == {"A": 9}
 

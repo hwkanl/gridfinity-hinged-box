@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "note": "shipped: looser fits than default (hinge, dovetails, latch) for a printer that runs tight",
+  "values": {
+    "hinge_clearance": 0.25,
+    "hinge_dovetail_fit": 0.15,
+    "hinge_detent_height": 0.6,
+    "latch_clearance": 0.3,
+    "latch_dovetail_fit": 0.125,
+    "latch_detent_height": 0.4,
+    "latch_preload": 0.2
+  },
+  "calibration": {}
+}

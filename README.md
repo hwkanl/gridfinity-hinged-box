@@ -1,102 +1,211 @@
-# Gridfinity hinged box (FreeCAD)
+# Gridfinity Hinged Box
 
-A parametric, Gridfinity-compatible storage box generated in FreeCAD.
-The only requirement is FreeCAD 1.1 or newer.
+A storage box for Gridfinity bins, with a hinged lid and latches that
+snap shut. The hinges and latches print in place, with no screws or glue.
+This FreeCAD workbench makes the box in the size you need and tunes the fit to
+your printer.
 
-Current parts: `bottom` (holds standard Gridfinity bins on built-in
-baseplate pockets) and `lid` (Gridfinity feet on its underside drop into
-the bins' stacking lips and keep them in place). The two are joined by
-hinges: knuckles with cone pins on the lid, a free leaf per hinge whose
-dovetail slides into a slot in a rib on the bottom's back wall. Over-center
-draw latches on the front wall lock it (see Lock below).
+<!-- photo: a printed box, open and closed (see the image list) -->
 
-## Install (FreeCAD addon)
+You're probably here for one of two reasons:
 
-Needs FreeCAD 1.1 or newer.
+- You want another size of box, or more hinges or locks. Go to
+  [Build a box](#build-a-box).
+- The ready-made files didn't fit. A hinge fused, or a part was too tight
+  or too loose. Start with
+  [Check the fit with test prints](#check-the-fit-with-test-prints).
 
-1. In FreeCAD: Tools > Addon Manager > Preferences (the gear) > Custom
-   repositories > add `https://github.com/hwkanl/gridfinity-hinged-box`,
-   branch `main`.
-2. Install "Gridfinity Hinged Box" from the Addon Manager and restart FreeCAD.
-3. Pick the "Gridfinity Hinged Box" workbench.
+## Install
 
-| Command | What it does |
+You need [FreeCAD](https://www.freecad.org) 1.1 or newer.
+
+1. In FreeCAD, open **Tools → Addon Manager**.
+2. Click the gear (Preferences), go to **Custom repositories** and add
+   `https://github.com/hwkanl/gridfinity-hinged-box` with branch `main`.
+3. Find **Gridfinity Hinged Box** in the Addon Manager, install it and
+   restart FreeCAD.
+4. Pick **Gridfinity Hinged Box** in the workbench list.
+
+You get this toolbar:
+
+![The workbench toolbar](images/toolbar.png)
+
+| Button | What it's for |
 |---|---|
-| New box | Build a new box from its size and a preset |
-| Edit box | Copy the open box's printable parts into PartDesign bodies to add your own features, then Export STLs |
-| Export STLs | Write the STLs of the edited box (if it is the active document) or of the generated box |
-| Presets | Make, edit and delete presets (printer/material tolerances) |
-| Calibrate | Guided test-print sweeps that fill a preset with your printer's tolerances |
-| Test prints | Four small parts that test a preset: the hinge, its dovetail slot, the latch and its pad with the lid's lip |
+| New box | Make a box: size, hinges, locks and a preset |
+| Edit box | Add your own details to a box, such as text on the lid |
+| Export STLs | Save the files to print |
+| Presets | See and change the fit settings for your printer |
+| Calibrate | Find the right fit settings, one print at a time |
+| Test prints | Print four small parts to check a preset |
 
-Presets are kept in FreeCAD's user data directory, under
-`hwkan_gfbox/presets/` (`~/.local/share/FreeCAD/v1-1/` on Linux,
-`%APPDATA%\FreeCAD\v1-1\` on Windows). Each command that writes files asks
-for an output folder and remembers the last one.
+### The panel doesn't show up
 
-The rest of this README describes the box and the command line scripts, which
-work from a checkout of the repository.
+New box opens a panel on the side of the window. If nothing appears, the
+panel may be hidden as an overlay. Try these in order:
 
-## Setup
+1. **View → Overlay Docked Panel → Toggle Overlay for All Panels**.
+2. Make sure **View → Panels → Tasks** is ticked.
 
-The scripts run FreeCAD headless through `scripts/fc.sh`, which uses
-`$FREECAD` (path to `freecadcmd` or to a FreeCAD AppImage) or else
-`freecadcmd` on your PATH:
+## Check the fit with test prints
 
-    export FREECAD=~/app/FreeCAD_1.1.3-Linux-x86_64-py311.AppImage
+Every printer prints a little differently. A **preset** holds the
+settings that depend on the printer, such as how much room the moving
+parts get and how firmly they click into place. Three come with the workbench: `default`,
+`Tight` and `Loose`. Before you print a whole box, print the test parts
+for a preset and see if they fit.
+
+### Print the test parts
+
+Click **Test prints**, pick a preset and a folder, and click OK. Making
+the parts takes a few seconds, and up to about 30 seconds on a slow
+computer.
+
+![The Test prints dialog](images/test_prints.png)
+
+You get four small parts:
+
+| File | What it is |
+|---|---|
+| `hinge_lid.stl` | A piece of the lid with a hinge, its leaf printed in place |
+| `hinge_rib.stl` | The slot on the box's back that the leaf slides into |
+| `latch.stl` | One latch, printed in one piece |
+| `lock_front.stl` | The slot on the box's front for the latch, with the lid's edge on top |
+
+Print them as they are, without supports.
+
+### Try them
+
+1. Swing the leaf on `hinge_lid` and slide it down into `hinge_rib` until
+   it clicks.
+2. Slide the latch up into `lock_front` from below until it clicks, then
+   close it over the edge on top.
+
+With a good fit, the hinge turns freely without wobbling, and the leaf
+and the latch slide in by hand and click. The closed latch holds firmly
+but still opens by hand.
+
+### If something is off
+
+Find what you see in the table. Each line names the setting to change and
+which way. Change it by one step, then print that part again. A step is
+0.025 mm for the clearances and the dovetail fits, and 0.05 mm for the
+detent heights and `latch_preload`.
+
+| What you see | Setting | Change |
+|---|---|---|
+| The hinge is stuck, or its parts fused | `hinge_clearance` | up |
+| The hinge wobbles | `hinge_clearance` | down |
+| The leaf won't slide into the slot | `hinge_dovetail_fit` | up |
+| The leaf rattles in the slot | `hinge_dovetail_fit` | down |
+| The leaf is very hard to click in or out | `hinge_detent_height` | down |
+| The leaf doesn't stay in | `hinge_detent_height` | up |
+| The latch's parts are stuck or fused | `latch_clearance` | up |
+| The latch's parts wobble | `latch_clearance` | down |
+| The latch won't slide into its slot | `latch_dovetail_fit` | up |
+| The latch wiggles in its slot | `latch_dovetail_fit` | down |
+| The latch is very hard to click in or out | `latch_detent_height` | down |
+| The latch doesn't stay in | `latch_detent_height` | up |
+| The latch is very hard to close | `latch_preload` | down |
+| The closed lid is loose | `latch_preload` | up |
+
+### Change a preset
+
+You can't change the presets that come with the workbench, so make your
+own copy:
+
+1. Click **Presets** and select the preset closest to what you need.
+2. Click **New…** and give your copy a name, such as your printer's.
+3. Change the values, then click **Save**.
+
+![The Presets dialog](images/presets.png)
+
+The column on the right says what each setting does. When you've saved,
+make test prints with your preset and try again.
+
+### Or let Calibrate find the values
+
+If you'd rather not guess, **Calibrate** finds the settings for you, one
+at a time. For each setting it makes a strip of the same part in five
+slightly different sizes, each with a number on its underside. You print
+the strip, try the parts, and click the number that fits best. If none
+fit, click the word that says what was wrong, such as too tight or too
+loose, and Calibrate makes a new strip. It saves your choices in the
+preset you named.
+
+1. Click **Calibrate**.
+2. Type a name for your new preset and pick the preset to start from.
+3. Pick a folder and click **Start run**.
+4. Print the files it writes, try the parts, and click your answer under
+   **Answer**. Repeat until it says it's done.
+
+![The Calibrate dialog](images/calibrate.png)
+
+The dialog tells you what to print and how to judge each strip.
+Calibrate does six of the settings in one run. The last one,
+`latch_preload`, sets how hard the latch pulls the lid shut. To try it
+you need the lid's edge and the box's front, so print a box with your new
+preset, or just `lock_front.stl` from **Test prints**. Then open
+Calibrate, pick your preset, type `G` in the **Tests** field and click
+**Start run**.
+
+## Build a box
+
+Click **New box**. A panel opens on the side.
+
+![The New box panel](images/new_box.png)
+
+- **Width** and **Depth**: the number of Gridfinity cells, at least 2
+  each. A cell is 42 mm. The width is the side with the hinges and locks, and
+  it can't be smaller than the depth.
+- **Height**: in Gridfinity units of 7 mm, at least 3.
+- **Hinges** and **Locks**: how many, up to one per cell of width. A box
+  needs at least 2 hinges and 1 lock.
+- **Preset**: the fit settings for your printer.
+
+Click OK. The box appears in the 3D view after a few seconds.
+
+### Add your own details
+
+With a box open, click **Edit box**. It makes a copy of the box that you
+can change with FreeCAD's own tools, for example to put text on the lid.
+The copy has one body per file to print, already laid out for printing.
+This guide doesn't cover FreeCAD itself. When you're done, save the copy
+under a name of your own, keep it the active document, and click
+**Export STLs**. You get one file per body, named after the body.
 
 ## Export STLs
 
-    scripts/fc.sh scripts/make_stls.py                              # default 3x2x6 box -> build/stl/
-    scripts/fc.sh scripts/make_stls.py --set gf_x=4 --set gf_y=3    # another size
-    scripts/fc.sh scripts/make_stls.py --part lid --fine            # one part, finer mesh
-    scripts/fc.sh scripts/make_stls.py --preset prusa-petg          # your printer's tolerances
+Click **Export STLs** and pick a folder. You get:
 
-Files are named after the grid size (`lid_4x3x6.stl`) and are already
-oriented for printing: put them on the bed as they are. Both print without
-supports; the lid prints open side down, standing on its rim and feet.
+- the lid and the bottom, named after the size, such as lid_3x2x6.stl.
+  The hinge leaves are part of the lid file.
+- `latch.stl`. Print it once for each lock.
+- `build_info.json`, which records what was built and with which
+  settings. Keep it with the files, and include it if you ask for help.
 
-The lid STL also holds one free hinge leaf per hinge, printed in place next
-to the lid's back. After printing, swing each leaf down past the lid's
-rim (toward the side that lay on the bed) until it hangs with its flat
-side toward the box; lowering the lid onto the bottom slides the leaves'
-dovetails into the slots in the hinge ribs, until a notch in each leaf
-snaps over the nub above its slot (`hinge_detent_height` sets how hard). The leaf ends sit
-only `hinge_clearance` from the lid's knuckles all the way down to the bed, so
-a strong first-layer squish (elephant's foot) can weld them together:
-reduce the first-layer squish, or break them free after printing.
+The parts already lie the right way up for printing. Put them on the bed
+as they are, with no supports.
 
-`latch.stl` is one latch; see Lock below. Its name does not depend on the
-grid size.
+## Print and put it together
 
-`build_info.json` next to them records every parameter value, the FreeCAD
-version and the git commit. It describes the most recent export run, so after
-exporting single parts with different parameters it only matches the files
-from that run.
+1. **Hinges.** The leaves print attached to the back of the lid. Swing
+   each leaf down past the lid's edge, toward the side that lay on the
+   bed, until it hangs with its flat side toward the box. Then lower the
+   lid onto the bottom, so the leaves slide into the slots on the back
+   until they click.
+2. **Latches.** Slide each latch up into its slot on the front from below
+   until it clicks. Hook it over the edge of the lid and press the lever
+   shut.
 
-## Lock
+If the leaves are stuck to the lid at the bottom, your printer squishes
+the first layer too much. This is called elephant's foot. Reduce it in
+your slicer, or break the leaves free carefully.
 
-One latch per lock on the front wall (`lock_count`, centered in equal wall
-segments, at most one per grid unit). The lid carries a lock lip (a block on
-its front face, with a round channel in its top) and the bottom a pad on
-its rim band; the pad's top is flush with the parting line, so the lid's
-lip rests on the pad. Both are part of the lid and bottom STLs.
+## Reference
 
-`latch.stl` is one latch (base, lever and hook, printed in place with
-D-shaped through-axles); print it once per lock. To fit it: slide the base
-up into the pad's dovetail slot from below until it snaps over the nub at
-the slot's foot (no glue; `latch_detent_height` sets how hard it snaps), then swing the
-hook over the lip's channel and press the lever shut. The latch is over
-center and draws the hook bar into the channel: its pull (`latch_preload`)
-presses the lid onto the bottom, so it works the same for every box
-height. The minimum height is 3 units (`gf_z_units` >= 3): a lower box has
-no room for the lever.
-
-## Parameters
-
-These are the inputs (on the `Params` sheet) and the tolerances and fits a
-preset sets (generated from `hwkan_gfbox/params.py`; regenerate with the
-command in `hwkan_gfbox/tests/test_readme.py`).
+The panel's fields and the preset settings, with their values in
+`default`:
 
 | Name | Default | Meaning |
 |---|---|---|
@@ -106,137 +215,21 @@ command in `hwkan_gfbox/tests/test_readme.py`).
 | `hinge_count` | 2 | number of hinges along the back wall (2 to gf_x, as many as fit) |
 | `lock_count` | 2 | number of locks along the front wall (1 to gf_x, as many as fit) |
 | `hinge_clearance` | 0.2 mm | Play in the hinge, which prints in one piece with the lid. Smaller: a firmer hinge with less wobble, but the print-in-place parts may fuse. Larger: turns freely, with more wobble. |
-| `hinge_dovetail_fit` | 0.1 mm | How snugly the hinge leaf slides into its slot on the box's back. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may rattle. |
+| `hinge_dovetail_fit` | 0.125 mm | How snugly the hinge leaf slides into its slot on the box's back. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may rattle. |
 | `hinge_detent_height` | 0.6 mm | How firmly the hinge leaf clicks into its slot. Larger: a firmer click, harder to push in and pull out. 0: no click. |
 | `latch_clearance` | 0.25 mm | Play in the latch, whose base, lever and hook print in one piece. Smaller: less wobble, but the print-in-place parts may fuse. Larger: moves freely, with more wobble. |
 | `latch_dovetail_fit` | 0.1 mm | How snugly the latch slides into its slot on the box's front. Smaller: a tighter fit, harder to push in. Larger: slides in easily, but may wiggle. |
 | `latch_detent_height` | 0.4 mm | How firmly the latch clicks into its slot. Larger: a firmer click, harder to push in and pull out. 0: no click. |
 | `latch_preload` | 0.2 mm | How hard the closed latch pulls the lid down. Larger: a tighter lid and a firmer snap, but harder to close. Smaller: easier to close, the lid may rattle. 0: no pull. |
 
-The inputs say what box you get; the tolerances and fits depend on your
-printer and material and come from a **preset**. Lengths are in mm.
-Everything else (design and Gridfinity constants, derived values) is on the
-`Internal` sheet: design constants can be set with `--set`, with a warning,
-but the model is not guaranteed to rebuild correctly when they change.
+Your own presets are files in FreeCAD's user data folder, under
+`hwkan_gfbox/presets/`: on Windows `%APPDATA%\FreeCAD\v1-1\`, on Linux
+`~/.local/share/FreeCAD/v1-1/`. **Presets → Open folder** takes you there.
 
-## Presets
+## For developers
 
-A preset is a JSON file holding the tolerance and fit values above, e.g. one
-per printer and material:
-
-    {"format": 1, "note": "Prusa MK4, PETG", "values": {"hinge_clearance": 0.15, "latch_clearance": 0.2}}
-
-Values it leaves out are the defaults. Presets live in FreeCAD's user data
-directory (`hwkan_gfbox/presets/NAME.json` under it); `default` is built in.
-The addon also ships `Tight` (tighter hinge, dovetail and latch fits, for a
-well-tuned printer; `hwkan_gfbox/resources/presets/`). Shipped presets are
-read-only and update with the addon; a preset of yours with the same name
-is used instead.
-
-    scripts/fc.sh scripts/presets.py list                    # the presets you have
-    scripts/fc.sh scripts/presets.py new prusa-petg          # a copy of default to edit
-    scripts/fc.sh scripts/presets.py path prusa-petg         # where its file is
-
-Choose one with `--preset NAME` (or `--preset path/to/file.json`) on
-`build_box.py`, `make_stls.py` and `make_test_prints.py` (which takes no `--set`). `--set` can't
-change a preset's values: edit the preset instead. In the FreeCAD document
-the `Params` sheet holds the inputs and the preset's name (the `preset`
-cell); the `Preset` sheet shows the values the box was built with. Every
-build writes them from the preset file, so edit the file, not those cells.
-If the file is gone (a document from another computer), the rebuild keeps
-the values on the `Preset` sheet; an empty `preset` cell (no preset) keeps
-them too. A name typed into the `preset` cell that doesn't exist is an error
-(the `Preset` sheet records which preset its values came from, so a typo is
-not mistaken for a moved document).
-
-## In the FreeCAD GUI (macros, for development)
-
-The addon's workbench is the normal way to work in the GUI; from a checkout the
-scripts also run as macros:
-
-1. File > Open `scripts/edit_params.py` (opens it in the macro editor),
-   then Macro > Execute macro. A `hwkan_gfbox` document holding only the
-   `Params` spreadsheet opens: edit the values there (the inputs, and the
-   `preset` cell to choose a preset; nothing is built
-   yet, so editing is instant). If a generated box is open, it is
-   replaced, keeping its inputs and preset.
-2. Open and execute `scripts/build_box.py` the same way: it builds the
-   box from the open document's inputs and preset (or from the defaults if
-   none is open) and shows it. To change the box, run `edit_params.py`
-   again rather than editing the sheet of the built box: every edit
-   there recomputes the whole box, and a recompute does not give the
-   right box anyway (the fillets and chamfers pick their edges when the
-   model is built); `build_box.py` must rebuild it.
-3. File > Open `scripts/make_stls.py`, then Macro > Execute macro:
-   exports all parts of the generated document to `build/stl/`.
-
-The document is always generated: changes made by hand in the GUI are lost
-on the next build. To save the model file headless:
-
-    scripts/fc.sh scripts/build_box.py [--set NAME=VALUE ...] [--out build/box.FCStd]
-
-## Test prints
-
-Four small parts that test a preset (your printer and material's gaps)
-without printing a box: the hinge and the lock, cut from a small box built
-with the default inputs and that preset:
-
-    scripts/fc.sh scripts/make_test_prints.py [--preset NAME|PATH] [--out build/test_prints] [--fine]
-
-writes `hinge_lid` (a lid strip with the leaf printed in place), `hinge_rib`
-(the leaf's dovetail slot), `latch` (base, lever and hook printed in place)
-and `lock_front` (the lock pad with the latch base's dovetail slot and, on
-it, the lid's lip, as one part), plus `build_info.json`. Slide the leaf into
-the rib and the latch base into the pad, then close the latch over the lip.
-In the GUI, the *Test prints* command asks for the preset (the open box's
-first) and the folder. To find a preset's values, use *Calibrate*.
-
-## Calibration
-
-A guided sequence of test prints that fills a preset for your printer and
-material. Each run writes one sweep (five copies of a piece, engraved on
-their underside with a label such as `B4`) and exits; print it, then tell
-the script which piece was best:
-
-    scripts/fc.sh scripts/calibrate.py prusa-petg          # new preset: writes test A's sweep
-    scripts/fc.sh scripts/calibrate.py prusa-petg A8       # A8 was best: records it, writes test B
-    scripts/fc.sh scripts/calibrate.py prusa-petg stuck    # all too tight: test A again, shifted
-    scripts/fc.sh scripts/calibrate.py prusa-petg          # where you are, what to print, how to answer
-
-| Test | Value | Print | Too tight / too loose |
-|---|---|---|---|
-| A | `hinge_clearance` | lid strip with its leaf printed in place | `stuck` / `sloppy` |
-| B | `hinge_dovetail_fit` | leaves, and one rib with its slot | `tight` / `loose` |
-| C | `hinge_detent_height` | ribs with their nub, and one leaf | `hard` / `weak` |
-| D | `latch_clearance` | latches printed in place | `stuck` / `sloppy` |
-| E | `latch_dovetail_fit` | latch bases, and one pad | `tight` / `loose` |
-| F | `latch_detent_height` | pads with their nub, and one base | `hard` / `weak` |
-| G | `latch_preload` | complete latches without the base's key, to try on a printed box | `hard` / `weak` |
-
-Each test uses the values chosen before it. A label's number is a fixed
-value: number 1 is 0 mm, each number one step more (0.025 mm for the
-clearances, 0.05 mm for the detents and the preload). The files go to
-`build/calibration/NAME/`, with a text file per sweep listing what each
-label means. A number whose value the generator rejects is left out of a
-sweep, so its labels can have gaps. `--from OTHER` starts a new preset from another one's values,
-`--tests DEF` runs only some tests, `--restart` the same tests over (`--yes`
-replaces a run in progress). An existing preset with no run in progress
-needs `--tests` or `--restart` to start one; without them the script only
-prints its status. G is not part of the default run: print a box with the
-preset first, then `--tests G`; the test latches slide in and out of its
-pads past the detent, so you can try them all. The wall strips (lid strip,
-rib, pad) carry a thin tab on their inner side for the label.
-
-## Platforms
-
-Tested on Linux. Windows: tested by hand. macOS: untested. The addon needs no
-shell; the headless `scripts/fc.sh` needs bash (macOS has it; on Windows use
-the addon or the GUI macros).
-
-## Checks
-
-    scripts/fc.sh scripts/run_tests.py   # unit and geometry tests
-    scripts/fc.sh scripts/verify.py      # geometry checks over a sweep of sizes and tolerances
+[DEVELOPING.md](DEVELOPING.md) covers running the generator from the
+command line and as FreeCAD macros, and its tests.
 
 ## Licence
 
